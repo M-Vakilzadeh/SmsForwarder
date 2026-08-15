@@ -33,17 +33,22 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
             val stateStr = intent.extras!!.getString(TelephonyManager.EXTRA_STATE)
             val number = intent.extras!!.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
             Log.d(TAG, "stateStr：$stateStr，number：$number，savedNumber：$savedNumber")
-            var state = 0
 
             //遍历intent.extras的所有key，打印出内容
             for (key in intent.extras!!.keySet()) {
                 Log.d(TAG, "key：$key，value：${intent.extras!!.get(key)}")
             }
 
-            when (stateStr) {
-                TelephonyManager.EXTRA_STATE_IDLE -> state = TelephonyManager.CALL_STATE_IDLE
-                TelephonyManager.EXTRA_STATE_OFFHOOK -> state = TelephonyManager.CALL_STATE_OFFHOOK
-                TelephonyManager.EXTRA_STATE_RINGING -> state = TelephonyManager.CALL_STATE_RINGING
+            val state = when (stateStr) {
+                TelephonyManager.EXTRA_STATE_IDLE -> TelephonyManager.CALL_STATE_IDLE
+                TelephonyManager.EXTRA_STATE_OFFHOOK -> TelephonyManager.CALL_STATE_OFFHOOK
+                TelephonyManager.EXTRA_STATE_RINGING -> TelephonyManager.CALL_STATE_RINGING
+                else -> {
+                    //识别不出状态就直接返回：不能落到默认值 0（即 IDLE），
+                    //否则会凭空触发一次「挂机」，多转发一条通话记录
+                    Log.w(TAG, "未知的通话状态：$stateStr")
+                    return
+                }
             }
             onCallStateChanged(context, state, number)
         }

@@ -6,6 +6,11 @@ object Worker {
     const val RULE = "rule"
     const val SENDER_INDEX = "sender_index"
     const val MSG_ID = "msg_id"
+
+    //CallLogWorker：等待通话记录落库后再读取
+    const val CALL_TYPE = "call_type"
+    const val PHONE_NUMBER = "phone_number"
+    const val CALL_START_MILLIS = "call_start_millis"
 }
 
 object TaskWorker {

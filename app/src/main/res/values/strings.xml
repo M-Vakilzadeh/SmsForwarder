@@ -12,6 +12,7 @@
     <string name="tag_app_version" translatable="false">{{APP_VERSION}}</string>
     <string name="tag_title" translatable="false">{{TITLE}}</string>
     <string name="tag_call_type" translatable="false">{{CALL_TYPE}}</string>
+    <string name="tag_call_log_missing" translatable="false">{{CALL_LOG_MISSING}}</string>
     <string name="tag_location" translatable="false">{{LOCATION}}</string>
     <string name="tag_location_longitude" translatable="false">{{LOCATION_LONGITUDE}}</string>
     <string name="tag_location_latitude" translatable="false">{{LOCATION_LATITUDE}}</string>

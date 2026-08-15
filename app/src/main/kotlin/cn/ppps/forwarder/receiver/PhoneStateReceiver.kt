@@ -99,8 +99,8 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
                     onOutgoingCallStarted(context, savedNumber, callStartTime)
                 } else {
                     isIncoming = true
-                    callStartTime = Date()
-
+                    //这里不重置 callStartTime：通话记录里的 date 是「开始响铃」的时刻，
+                    //若改成「接通」时刻，响铃较久的来电会匹配不到自己的那条通话记录。
                     onIncomingCallAnswered(context, savedNumber, callStartTime)
                 }
 

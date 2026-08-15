@@ -34,6 +34,8 @@ data class MsgInfo(
     var subId: Int = 0, //卡槽主键
     var callType: Int = 0, //通话类型：1.来电挂机 2.去电挂机 3.未接来电 4.来电提醒 5.来电接通 6.去电拨出
     var uid: Int = 0, //APP通知的UID
+    //通话记录在超时时间内没有落库：本条记录没有真实通话时长，服务端据此区分「查不到记录」和「真实时长为0」
+    var callLogMissing: Boolean = false,
 ) : Serializable {
 
     val titleForSend = getTitleForSend()
@@ -105,6 +107,8 @@ data class MsgInfo(
                 getString(R.string.tag_call_type),
                 CALL_TYPE_MAP[callType.toString()] ?: getString(R.string.unknown_call), encoderName
             )
+            //不做本地化：服务端需要稳定可解析的值
+            .replaceTag(getString(R.string.tag_call_log_missing), callLogMissing.toString(), encoderName)
             .replaceTag(getString(R.string.tag_ipv4), TaskUtils.ipv4, encoderName)
             .replaceTag(getString(R.string.tag_ipv6), TaskUtils.ipv6, encoderName)
             .replaceTag(getString(R.string.tag_ip_list), TaskUtils.ipList, encoderName)

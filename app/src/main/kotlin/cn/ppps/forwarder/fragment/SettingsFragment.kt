@@ -24,6 +24,7 @@ import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.work.OneTimeWorkRequestBuilder
@@ -90,6 +91,9 @@ import java.util.Locale
 class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickListener {
 
     private val TAG: String = SettingsFragment::class.java.simpleName
+
+    //申请去电广播补充权限的请求码，结果不做处理
+    private val REQUEST_CODE_PROCESS_OUTGOING_CALLS = 10086
     private var titleBar: TitleBar? = null
     private val mTimeOption = DataProvider.timePeriodOption
     private var initViewsFinished = false
@@ -389,6 +393,22 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
 
     //转发通话
     @SuppressLint("UseSwitchCompatOrMaterialCode")
+    /**
+     * 申请 PROCESS_OUTGOING_CALLS：没有它 NEW_OUTGOING_CALL 广播根本不会下发，
+     * 去电号码就拿不到。API 29 起该权限已废弃且第三方应用无法获取，部分 ROM 上也不存在，
+     * 因此只作为号码的「补充来源」——失败静默忽略，绝不阻断转发功能。
+     */
+    private fun requestOutgoingCallsPermission() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) return
+        val permission = android.Manifest.permission.PROCESS_OUTGOING_CALLS
+        if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) return
+        try {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(permission), REQUEST_CODE_PROCESS_OUTGOING_CALLS)
+        } catch (e: Exception) {
+            Log.w(TAG, "申请 PROCESS_OUTGOING_CALLS 失败：${e.message}")
+        }
+    }
+
     private fun switchEnablePhone(sbEnablePhone: SwitchButton, scbCallType1: SmoothCheckBox, scbCallType2: SmoothCheckBox, scbCallType3: SmoothCheckBox, scbCallType4: SmoothCheckBox, scbCallType5: SmoothCheckBox, scbCallType6: SmoothCheckBox) {
         scbCallType1.isChecked = SettingUtils.enableCallType1
         scbCallType2.isChecked = SettingUtils.enableCallType2
@@ -430,6 +450,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                                 sbEnablePhone.isChecked = false
                                 return
                             }
+
+                            //去电广播的补充权限，单独申请：拿不到也不影响转发，
+                            //所以不能并进上面的 deniedList 判断，否则会把转发开关整个关掉
+                            requestOutgoingCallsPermission()
                         }
                     })
             }

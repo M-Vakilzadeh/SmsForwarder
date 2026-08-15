@@ -25,13 +25,14 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
             Log.d(TAG, "EXTRA [$key] = $value")
         }
         if (intent.action == CallReceiver.ACTION_OUT) {
-            savedNumber = intent.extras!!.getString(CallReceiver.EXTRA_PHONE_NUMBER)
+            //去电号码仅作为号码的补充来源，取不到时不能覆盖已捕获的号码
+            val outgoingNumber = intent.extras!!.getString(CallReceiver.EXTRA_PHONE_NUMBER)
+            if (!outgoingNumber.isNullOrBlank()) savedNumber = outgoingNumber
             Log.d(TAG, "savedNumber：$savedNumber")
         } else {
             val stateStr = intent.extras!!.getString(TelephonyManager.EXTRA_STATE)
             val number = intent.extras!!.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
-            savedNumber = number
-            Log.d(TAG, "stateStr：$stateStr，savedNumber：$savedNumber")
+            Log.d(TAG, "stateStr：$stateStr，number：$number，savedNumber：$savedNumber")
             var state = 0
 
             //遍历intent.extras的所有key，打印出内容
@@ -66,23 +67,32 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
     //Incoming call-  goes from IDLE to RINGING when it rings, to OFFHOOK when it's answered, to IDLE when its hung up
     //Outgoing call-  goes from IDLE to OFFHOOK when it dials out, to IDLE when hung up
     private fun onCallStateChanged(context: Context, state: Int, number: String?) {
-        if (lastState == state || number == null) {
+        //Android 9+ 同一次状态变化会广播两次：一次带 EXTRA_INCOMING_NUMBER（需要 READ_CALL_LOG），一次不带。
+        //所以只在拿到非空号码时才覆盖，避免刚捕获到的号码被后一条广播置空。
+        if (!number.isNullOrBlank()) savedNumber = number
+
+        //仅根据状态去重：IDLE 广播通常不带号码，若因号码为空而提前返回，挂机事件会被整个吞掉，
+        //lastState 会永远停在 OFFHOOK，导致后续每一通电话都不再转发，直到进程重启。
+        if (lastState == state) {
             //No change, debounce extras
             return
         }
+
+        val previousState = lastState
+        //先更新状态再触发回调，回调耗时期间到达的重复广播才能被正确去重
+        lastState = state
 
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
                 isIncoming = true
                 callStartTime = Date()
-                savedNumber = number
 
-                onIncomingCallReceived(context, number, callStartTime)
+                onIncomingCallReceived(context, savedNumber, callStartTime)
             }
 
             TelephonyManager.CALL_STATE_OFFHOOK ->
                 //Transition of ringing->offhook are pickups of incoming calls.  Nothing done on them
-                if (lastState != TelephonyManager.CALL_STATE_RINGING) {
+                if (previousState != TelephonyManager.CALL_STATE_RINGING) {
                     isIncoming = false
                     callStartTime = Date()
 
@@ -94,9 +104,9 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
                     onIncomingCallAnswered(context, savedNumber, callStartTime)
                 }
 
-            TelephonyManager.CALL_STATE_IDLE ->
+            TelephonyManager.CALL_STATE_IDLE -> {
                 //Went to idle-  this is the end of a call.  What type depends on previous state(s)
-                if (lastState == TelephonyManager.CALL_STATE_RINGING) {
+                if (previousState == TelephonyManager.CALL_STATE_RINGING) {
                     //Ring but no pickup
                     onMissedCall(context, savedNumber, callStartTime)
                 } else if (isIncoming) {
@@ -104,8 +114,11 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
                 } else {
                     onOutgoingCallEnded(context, savedNumber, callStartTime, Date())
                 }
+
+                //本次通话已结束，清空号码，避免残留号码污染下一通电话
+                savedNumber = null
+            }
         }
-        lastState = state
     }
 
     companion object {

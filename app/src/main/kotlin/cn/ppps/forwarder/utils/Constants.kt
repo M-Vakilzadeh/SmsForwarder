@@ -11,6 +11,10 @@ object Worker {
     const val CALL_TYPE = "call_type"
     const val PHONE_NUMBER = "phone_number"
     const val CALL_START_MILLIS = "call_start_millis"
+
+    //WebhookDeliveryWorker：持久化投递
+    const val WEBHOOK_SETTING = "webhook_setting"
+    const val LOG_ID = "log_id"
 }
 
 object TaskWorker {

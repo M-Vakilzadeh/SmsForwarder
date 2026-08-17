@@ -23,7 +23,6 @@ import cn.ppps.forwarder.entity.setting.SmsSetting
 import cn.ppps.forwarder.entity.setting.SocketSetting
 import cn.ppps.forwarder.entity.setting.TelegramSetting
 import cn.ppps.forwarder.entity.setting.UrlSchemeSetting
-import cn.ppps.forwarder.entity.setting.WebhookSetting
 import cn.ppps.forwarder.entity.setting.WeworkAgentSetting
 import cn.ppps.forwarder.entity.setting.WeworkRobotSetting
 import cn.ppps.forwarder.utils.sender.BarkUtils
@@ -39,12 +38,12 @@ import cn.ppps.forwarder.utils.sender.SmsUtils
 import cn.ppps.forwarder.utils.sender.SocketUtils
 import cn.ppps.forwarder.utils.sender.TelegramUtils
 import cn.ppps.forwarder.utils.sender.UrlSchemeUtils
-import cn.ppps.forwarder.utils.sender.WebhookUtils
 import cn.ppps.forwarder.utils.sender.WeworkAgentUtils
 import cn.ppps.forwarder.utils.sender.WeworkRobotUtils
 import cn.ppps.forwarder.workers.SendLogicWorker
 import cn.ppps.forwarder.workers.SendWorker
 import cn.ppps.forwarder.workers.UpdateLogsWorker
+import cn.ppps.forwarder.workers.WebhookDeliveryWorker
 import com.google.gson.Gson
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.xuexiang.xutil.XUtil
@@ -133,8 +132,10 @@ object SendUtils {
                 }
 
                 TYPE_WEBHOOK -> {
-                    val settingVo = Gson().fromJson(sender.jsonSetting, WebhookSetting::class.java)
-                    WebhookUtils.sendMsg(settingVo, msgInfo, rule, senderIndex, logId, msgId)
+                    //持久化投递（T4）：交给 WebhookDeliveryWorker，由 WorkManager 保证
+                    //网络恢复后重试、进程重启后不丢，并在请求飞行期间持有 wakelock。
+                    //测试按钮仍走 WebhookUtils 的异步路径（见 WebhookFragment），以便弹 toast。
+                    WebhookDeliveryWorker.enqueue(sender.jsonSetting, msgInfo, rule, senderIndex, logId, msgId)
                 }
 
                 TYPE_WEWORK_ROBOT -> {

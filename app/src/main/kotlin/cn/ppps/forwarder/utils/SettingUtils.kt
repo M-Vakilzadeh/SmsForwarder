@@ -98,14 +98,14 @@ class SettingUtils private constructor() {
         //无声音乐唤醒间隔（秒，越大越省电）
         var musicInterval: Int by SharedPreference(SP_MUSIC_INTERVAL, 10)
 
-        //请求接口失败重试次数
-        var requestRetryTimes: Int by SharedPreference(SP_REQUEST_RETRY_TIMES, 0)
+        //请求接口失败重试次数（默认 3：伊朗移动数据不稳定，0 次意味着一次失败即永久丢失）
+        var requestRetryTimes: Int by SharedPreference(SP_REQUEST_RETRY_TIMES, 3)
 
         //请求接口失败重试间隔（秒）
         var requestDelayTime: Int by SharedPreference(SP_REQUEST_DELAY_TIME, 1)
 
-        //请求接口失败超时时间（秒）
-        var requestTimeout: Int by SharedPreference(SP_REQUEST_TIMEOUT, 10)
+        //请求接口失败超时时间（秒，默认 30：伊朗移动数据下 10s 过于紧张）
+        var requestTimeout: Int by SharedPreference(SP_REQUEST_TIMEOUT, 30)
 
         //通知内容
         var notifyContent: String by SharedPreference(SP_NOTIFY_CONTENT, getString(R.string.notification_content))

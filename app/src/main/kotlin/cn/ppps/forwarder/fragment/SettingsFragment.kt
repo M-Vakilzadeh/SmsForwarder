@@ -71,6 +71,7 @@ import com.hjq.permissions.permission.PermissionLists
 import com.hjq.permissions.permission.base.IPermission
 import com.jeremyliao.liveeventbus.LiveEventBus
 import com.xuexiang.xaop.annotation.SingleClick
+import com.xuexiang.xhttp2.XHttp
 import com.xuexiang.xpage.annotation.Page
 import com.xuexiang.xpage.core.PageOption
 import com.xuexiang.xui.widget.actionbar.TitleBar
@@ -1013,6 +1014,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         xsbTimeout.setDefaultValue(SettingUtils.requestTimeout)
         xsbTimeout.setOnSeekBarListener { _: XSeekBar?, newValue: Int ->
             SettingUtils.requestTimeout = newValue
+            //立即把新的超时应用到 XHttp 全局，避免必须重启 App 才生效（webhook 持久化投递另在请求级读取）
+            try {
+                XHttp.getInstance().setTimeout(newValue * 1000L)
+            } catch (e: Exception) {
+                Log.w(TAG, "更新 XHttp 全局超时失败：${e.message}")
+            }
         }
     }
 

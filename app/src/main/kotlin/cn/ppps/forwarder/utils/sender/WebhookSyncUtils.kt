@@ -2,12 +2,15 @@ package cn.ppps.forwarder.utils.sender
 
 import android.text.TextUtils
 import android.util.Base64
+import cn.ppps.forwarder.core.Core
 import cn.ppps.forwarder.database.entity.Rule
 import cn.ppps.forwarder.entity.MsgInfo
 import cn.ppps.forwarder.entity.setting.WebhookSetting
 import cn.ppps.forwarder.utils.AppUtils
 import cn.ppps.forwarder.utils.Log
+import cn.ppps.forwarder.utils.STATUS_ON
 import cn.ppps.forwarder.utils.SettingUtils
+import cn.ppps.forwarder.utils.TYPE_WEBHOOK
 import com.google.gson.Gson
 import okhttp3.Credentials
 import okhttp3.FormBody
@@ -336,5 +339,65 @@ object WebhookSyncUtils {
         if (str == null) return "null"
         val jsonStr: String = Gson().toJson(str)
         return if (jsonStr.length >= 2) jsonStr.substring(1, jsonStr.length - 1) else jsonStr
+    }
+
+    // ---------- 供 T7 通道 C（对账批量）/ D（心跳）复用 ----------
+
+    /**
+     * 取第一个「启用」的 Webhook 通道配置，用于派生 /call/batch、/heartbeat 的地址，
+     * 并复用其代理 / 忽略证书 / 超时设置。必须在工作线程调用（读数据库）。
+     */
+    fun resolveWebhookSetting(): WebhookSetting? {
+        return try {
+            Core.sender.getAllNonCache()
+                .firstOrNull { it.type == TYPE_WEBHOOK && it.status == STATUS_ON && it.jsonSetting.isNotBlank() }
+                ?.let { Gson().fromJson(it.jsonSetting, WebhookSetting::class.java) }
+                ?.takeIf { !TextUtils.isEmpty(it.webServer) }
+        } catch (e: Exception) {
+            Log.e(TAG, "解析 Webhook 通道配置失败：${e.message}", e)
+            null
+        }
+    }
+
+    //约定 webServer 指向 /call：批量端点即 /call/batch
+    fun batchUrl(setting: WebhookSetting): String = setting.webServer.trim().trimEnd('/') + "/batch"
+
+    //心跳端点 /heartbeat 与 /call 同级
+    fun heartbeatUrl(setting: WebhookSetting): String {
+        val base = setting.webServer.trim().trimEnd('/')
+        val parent = base.substringBeforeLast('/', base)
+        return "$parent/heartbeat"
+    }
+
+    /**
+     * 直接 POST 一段 JSON（通道 C/D 用）。校验规则与 [send] 一致：HTTP 200 且（配了 response 串时）包含它才算成功。
+     * 复用 webhook 通道的代理/证书/超时与自定义 header。
+     */
+    fun postJson(setting: WebhookSetting, url: String, jsonBody: String): WebhookResult {
+        val client = try {
+            buildClient(setting)
+        } catch (e: Exception) {
+            return WebhookResult.PermanentFailure("build client failed: ${e.message}")
+        }
+        val request = try {
+            val builder = Request.Builder().url(url)
+            for ((key, value) in setting.headers.entries) {
+                if (key.equals("Content-Type", ignoreCase = true)) continue
+                builder.header(key, value)
+            }
+            val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonBody)
+            builder.post(body).build()
+        } catch (e: Exception) {
+            return WebhookResult.PermanentFailure("build request failed: ${e.message}")
+        }
+        return try {
+            client.newCall(request).execute().use { response ->
+                classify(response.code(), response.body()?.string() ?: "", setting.response)
+            }
+        } catch (e: IOException) {
+            WebhookResult.RetryableFailure("io: ${e.message}")
+        } catch (e: Exception) {
+            WebhookResult.RetryableFailure("exception: ${e.message}")
+        }
     }
 }

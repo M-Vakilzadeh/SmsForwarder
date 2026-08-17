@@ -240,6 +240,9 @@ object SendUtils {
     //更新转发日志状态
     fun updateLogs(logId: Long?, status: Int, response: String) {
 
+        //记录最近一次转发成功时间，供心跳上报判断设备是否还在正常出数据（所有通道成功都算）
+        if (status == 2) SettingUtils.lastForwardSuccessTime = System.currentTimeMillis()
+
         //自动任务的不需要吐司或者更新日志
         if (logId == -1L) return
 

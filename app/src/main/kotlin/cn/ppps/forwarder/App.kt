@@ -32,6 +32,8 @@ import cn.ppps.forwarder.receiver.CactusReceiver
 import cn.ppps.forwarder.receiver.LockScreenReceiver
 import cn.ppps.forwarder.receiver.NetworkChangeReceiver
 import cn.ppps.forwarder.workers.DailyForwardWorker
+import cn.ppps.forwarder.workers.HeartbeatWorker
+import cn.ppps.forwarder.workers.ReconcileWorker
 import cn.ppps.forwarder.workers.SweepWorker
 import cn.ppps.forwarder.service.BluetoothScanService
 import cn.ppps.forwarder.service.ForegroundService
@@ -264,6 +266,10 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             SweepWorker.enqueueOnce(this)
             //每日汇总转发：按当前设置安排/取消定时任务（非每日模式会自动取消）
             DailyForwardWorker.schedule(this)
+            //通话记录对账（通道 C）：每 6 小时直接读通话记录批量补账，不依赖广播接收器
+            ReconcileWorker.enqueuePeriodic(this)
+            //心跳（通道 D）：每 30 分钟上报设备状态，把静默失败变成当天可发现
+            HeartbeatWorker.enqueuePeriodic(this)
 
             //监听锁屏&解锁
             val lockScreenReceiver = LockScreenReceiver()

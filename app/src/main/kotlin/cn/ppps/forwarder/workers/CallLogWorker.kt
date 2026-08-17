@@ -86,7 +86,9 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             }
 
             val number = callInfo.number.ifBlank { phoneNumber ?: "" }
-            val msgInfo = MsgInfo("call", number, PhoneUtils.getCallMsg(callInfo), Date(), simInfo, simSlot, callInfo.subId, callType)
+            //date 用通话真实发生时间（而非转发时刻）：让实时、每日汇总、对账三条路径对同一通电话
+            //算出的幂等键 md5([device_mark]+[from]+[receive_time]+[org_content]) 完全一致，服务端可跨通道去重。
+            val msgInfo = MsgInfo("call", number, PhoneUtils.getCallMsg(callInfo), Date(callInfo.dateLong), simInfo, simSlot, callInfo.subId, callType)
             //结构化字段（T5）：不本地化，服务端可稳定解析
             msgInfo.callDuration = callInfo.duration
             msgInfo.callDateLong = callInfo.dateLong

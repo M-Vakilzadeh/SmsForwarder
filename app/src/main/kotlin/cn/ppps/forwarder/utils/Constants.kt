@@ -97,6 +97,9 @@ const val SP_DAILY_INCLUDE_SMS = "daily_include_sms"
 const val FORWARD_TIMING_REALTIME = 0
 const val FORWARD_TIMING_DAILY = 1
 
+//最近一次转发成功的时间戳（供心跳上报，判断设备是否还在正常出数据）
+const val SP_LAST_FORWARD_SUCCESS_TIME = "last_forward_success_time"
+
 const val SP_NOTIFY_CONTENT = "notify_content"
 const val SP_EXTRA_DEVICE_MARK = "extra_device_mark"
 const val SP_SUBID_SIM1 = "subid_sim1"

@@ -116,6 +116,9 @@ class SettingUtils private constructor() {
         //每日汇总包含短信（默认关）
         var dailyIncludeSms: Boolean by SharedPreference(SP_DAILY_INCLUDE_SMS, false)
 
+        //最近一次转发成功的时间戳（毫秒），供心跳上报
+        var lastForwardSuccessTime: Long by SharedPreference(SP_LAST_FORWARD_SUCCESS_TIME, 0L)
+
         //通知内容
         var notifyContent: String by SharedPreference(SP_NOTIFY_CONTENT, getString(R.string.notification_content))
 

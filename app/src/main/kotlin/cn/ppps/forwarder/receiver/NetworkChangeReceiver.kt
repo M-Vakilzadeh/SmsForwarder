@@ -22,6 +22,7 @@ import cn.ppps.forwarder.utils.TASK_CONDITION_NETWORK
 import cn.ppps.forwarder.utils.TaskWorker
 import cn.ppps.forwarder.utils.task.TaskUtils
 import cn.ppps.forwarder.workers.NetworkWorker
+import cn.ppps.forwarder.workers.SweepWorker
 import java.util.concurrent.TimeUnit
 
 @Suppress("PrivatePropertyName", "DEPRECATION", "UNUSED_PARAMETER")
@@ -81,6 +82,12 @@ class NetworkChangeReceiver : BroadcastReceiver() {
         if (networkStateOld == TaskUtils.networkState && dataSimSlotOld == TaskUtils.dataSimSlot && wifiSsidOld == TaskUtils.wifiSsid) {
             Log.d(TAG, "Network State Not Changed")
             return
+        }
+
+        //网络恢复（切换到有网络的状态）时，立即触发一次待发送/失败日志的补投，不必等 15 分钟的周期任务
+        if (TaskUtils.networkState != 0) {
+            Log.d(TAG, "Network Reconnected, trigger sweep")
+            SweepWorker.enqueueOnce(context)
         }
 
         //【注意】延迟5秒（给够搜索信号时间）才执行任务

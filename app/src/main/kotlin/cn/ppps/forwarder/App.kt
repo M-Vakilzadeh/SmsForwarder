@@ -31,6 +31,7 @@ import cn.ppps.forwarder.receiver.BluetoothReceiver
 import cn.ppps.forwarder.receiver.CactusReceiver
 import cn.ppps.forwarder.receiver.LockScreenReceiver
 import cn.ppps.forwarder.receiver.NetworkChangeReceiver
+import cn.ppps.forwarder.workers.SweepWorker
 import cn.ppps.forwarder.service.BluetoothScanService
 import cn.ppps.forwarder.service.ForegroundService
 import cn.ppps.forwarder.service.HttpServerService
@@ -255,6 +256,11 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
                 //addAction("android.intent.action.DATA_CONNECTION_STATE_CHANGED")
             }
             registerReceiver(networkReceiver, networkFilter)
+
+            //补投兜底（Sweep）：每 15 分钟重投一次待发送/失败的日志，人人都有、不需配置、关不掉
+            SweepWorker.enqueuePeriodic(this)
+            //启动即补投一次：App 曾被强杀多日后再次打开时（网络本就在，不会触发联网事件），立即把积压日志补出去
+            SweepWorker.enqueueOnce(this)
 
             //监听锁屏&解锁
             val lockScreenReceiver = LockScreenReceiver()

@@ -3,6 +3,7 @@ package cn.ppps.forwarder.workers
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -122,7 +123,15 @@ class WebhookDeliveryWorker(context: Context, params: WorkerParameters) : Corout
                     )
                 )
                 .build()
-            WorkManager.getInstance(XUtil.getContext()).enqueue(request)
+            val wm = WorkManager.getInstance(XUtil.getContext())
+            if (logId > 0) {
+                //按 logId 做唯一投递：一条日志同一时间只保留一个投递任务，正在重试(ENQUEUED/RUNNING)时
+                //Sweep 的重复入队会被 KEEP 忽略，避免长时间断网时同一条日志堆积出大量并行 Worker；
+                //而任务终态(成功/永久失败)后，后续 Sweep 仍可重新入队补投。
+                wm.enqueueUniqueWork("webhook_delivery_$logId", ExistingWorkPolicy.KEEP, request)
+            } else {
+                wm.enqueue(request)
+            }
         }
     }
 }

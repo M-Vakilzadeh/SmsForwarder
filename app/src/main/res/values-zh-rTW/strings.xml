@@ -897,6 +897,11 @@
     <string name="silent_time_period">免打擾(禁用轉發)時間段</string>
     <string name="silent_time_period_tips">結束時間小於開始則跨天；相等則禁用</string>
     <string name="silent_time_period_logs">記錄日誌</string>
+    <string name="daily_forward_mode">每日彙總轉發</string>
+    <string name="daily_forward_tips">開啟後不再即時轉發，改為每天定時統一讀取通話/簡訊記錄批次轉發（斷網時到點會先入佇列，聯網後自動補發）</string>
+    <string name="daily_forward_time_label">每日轉發時間</string>
+    <string name="daily_forward_include_call">包含通話</string>
+    <string name="daily_forward_include_sms">包含簡訊</string>
     <string name="download_frpc_tips">是否立即下載，並重啟加載？</string>
     <string name="download_frpc_tips2">下載成功，是否立即重啟加載？</string>
     <string name="appkey">AppKey</string>

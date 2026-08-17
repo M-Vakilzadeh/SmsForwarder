@@ -896,6 +896,11 @@
     <string name="silent_time_period">Disable FW. Period</string>
     <string name="silent_time_period_tips">If the end time is less than the start time, it will span days; if it is equal, it will be disabled</string>
     <string name="silent_time_period_logs">Save Logs</string>
+    <string name="daily_forward_mode">Daily Batch Forwarding</string>
+    <string name="daily_forward_tips">When on, calls/SMS are not forwarded in real time; instead they are read from the call/SMS logs and forwarded together at a set time each day (queued if offline, sent automatically once network returns)</string>
+    <string name="daily_forward_time_label">Daily Forward Time</string>
+    <string name="daily_forward_include_call">Include Calls</string>
+    <string name="daily_forward_include_sms">Include SMS</string>
     <string name="download_frpc_tips">Do you want to download and restart to load!</string>
     <string name="download_frpc_tips2">Download successful, do you want to restart the loading now?</string>
     <string name="appkey">AppKey</string>

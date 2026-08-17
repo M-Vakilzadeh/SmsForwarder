@@ -39,6 +39,9 @@ import cn.ppps.forwarder.databinding.FragmentSettingsBinding
 import cn.ppps.forwarder.entity.SimInfo
 import cn.ppps.forwarder.fragment.client.CloneFragment
 import cn.ppps.forwarder.receiver.BootCompletedReceiver
+import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
+import cn.ppps.forwarder.utils.FORWARD_TIMING_REALTIME
+import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.service.BluetoothScanService
 import cn.ppps.forwarder.service.ForegroundService
 import cn.ppps.forwarder.service.LocationService
@@ -170,6 +173,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.xsbDuplicateMessagesLimits.setOnSeekBarListener { _: XSeekBar?, newValue: Int ->
             SettingUtils.duplicateMessagesLimits = newValue
         }
+        //转发时机：实时 / 每日汇总
+        setupDailyForward()
         //免打扰(禁用转发)时间段
         binding!!.tvSilentPeriod.text = mTimeOption[SettingUtils.silentPeriodStart] + " ~ " + mTimeOption[SettingUtils.silentPeriodEnd]
         binding!!.scbSilentPeriodLogs.isChecked = SettingUtils.enableSilentPeriodLogs
@@ -230,6 +235,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
 
     override fun initListeners() {
         binding!!.btnSilentPeriod.setOnClickListener(this)
+        binding!!.btnDailyForwardTime.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
         binding!!.btnExtraSim2.setOnClickListener(this)
@@ -253,6 +259,18 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     return@OnOptionsSelectListener false
                 }).setTitleText(getString(R.string.select_time_period)).setSelectOptions(SettingUtils.silentPeriodStart, SettingUtils.silentPeriodEnd).build<Any>().also {
                     it.setNPicker(mTimeOption, mTimeOption)
+                    it.show()
+                }
+            }
+
+            R.id.btn_daily_forward_time -> {
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    SettingUtils.dailyForwardTime = options1
+                    binding!!.tvDailyForwardTime.text = mTimeOption[options1]
+                    DailyForwardWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.daily_forward_time_label)).setSelectOptions(SettingUtils.dailyForwardTime).build<Any>().also {
+                    it.setPicker(mTimeOption)
                     it.show()
                 }
             }
@@ -408,6 +426,30 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
             ActivityCompat.requestPermissions(requireActivity(), arrayOf(permission), REQUEST_CODE_PROCESS_OUTGOING_CALLS)
         } catch (e: Exception) {
             Log.w(TAG, "申请 PROCESS_OUTGOING_CALLS 失败：${e.message}")
+        }
+    }
+
+    //转发时机：实时 / 每日汇总
+    @SuppressLint("SetTextI18n")
+    private fun setupDailyForward() {
+        binding!!.tvDailyForwardTime.text = mTimeOption[SettingUtils.dailyForwardTime]
+        binding!!.scbDailyIncludeCall.isChecked = SettingUtils.dailyIncludeCall
+        binding!!.scbDailyIncludeSms.isChecked = SettingUtils.dailyIncludeSms
+
+        val isDaily = SettingUtils.forwardTiming == FORWARD_TIMING_DAILY
+        binding!!.sbEnableDailyForward.isChecked = isDaily
+        binding!!.layoutDailyForwardDetail.visibility = if (isDaily) View.VISIBLE else View.GONE
+
+        binding!!.sbEnableDailyForward.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
+            SettingUtils.forwardTiming = if (isChecked) FORWARD_TIMING_DAILY else FORWARD_TIMING_REALTIME
+            binding!!.layoutDailyForwardDetail.visibility = if (isChecked) View.VISIBLE else View.GONE
+            DailyForwardWorker.schedule(requireContext())
+        }
+        binding!!.scbDailyIncludeCall.setOnCheckedChangeListener { _: SmoothCheckBox, isChecked: Boolean ->
+            SettingUtils.dailyIncludeCall = isChecked
+        }
+        binding!!.scbDailyIncludeSms.setOnCheckedChangeListener { _: SmoothCheckBox, isChecked: Boolean ->
+            SettingUtils.dailyIncludeSms = isChecked
         }
     }
 

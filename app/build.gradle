@@ -99,10 +99,14 @@ android {
             storePassword keyProps['storePassword']
         }
         debug {
-            keyAlias keyProps['keyAlias']
-            keyPassword keyProps['keyPassword']
-            storeFile keyProps['storeFile'] ? file(keyProps['storeFile']) : null
-            storePassword keyProps['storePassword']
+            //没有配置 keystore/keystore.properties 时，保留 AGP 自动生成的 debug.keystore，
+            //保证本地 debug 构建能正常签名打包（不要把 storeFile 覆盖成 null）
+            if (keyProps['storeFile']) {
+                keyAlias keyProps['keyAlias']
+                keyPassword keyProps['keyPassword']
+                storeFile file(keyProps['storeFile'])
+                storePassword keyProps['storePassword']
+            }
         }
     }
 
@@ -149,7 +153,9 @@ android {
             minifyEnabled true
             // 混淆配置
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (isNeedPackage.toBoolean()) {
+            //只有真正配置了 release 签名文件时才用 release 签名（CI 打包场景）；
+            //本地没有 keystore 时回退到 debug 签名，避免 packageDebug 因缺少 storeFile 失败
+            if (isNeedPackage.toBoolean() && keyProps['storeFile']) {
                 signingConfig signingConfigs.release
                 if (file('local.properties').exists()) {
                     Properties properties = new Properties()

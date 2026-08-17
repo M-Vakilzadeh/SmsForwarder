@@ -49,12 +49,10 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             Log.d(TAG, "callType = $callType, phoneNumber = $phoneNumber, callStartMillis = $callStartMillis")
 
             val deadline = System.currentTimeMillis() + POLL_TIMEOUT_MILLIS
-            var callInfo: CallInfo? = null
-            while (true) {
-                callInfo = findCallInfo(callType, phoneNumber, callStartMillis)
-                if (callInfo != null) break
-                if (System.currentTimeMillis() >= deadline) break
+            var callInfo: CallInfo? = findCallInfo(callType, phoneNumber, callStartMillis)
+            while (callInfo == null && System.currentTimeMillis() < deadline) {
                 delay(POLL_INTERVAL_MILLIS)
+                callInfo = findCallInfo(callType, phoneNumber, callStartMillis)
             }
 
             if (callInfo == null) {

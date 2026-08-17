@@ -400,7 +400,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
      */
     private fun requestOutgoingCallsPermission() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) return
-        val permission = android.Manifest.permission.PROCESS_OUTGOING_CALLS
+        //直接用字符串常量，避免引用已废弃的 Manifest.permission.PROCESS_OUTGOING_CALLS 产生告警
+        val permission = "android.permission.PROCESS_OUTGOING_CALLS"
         if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) return
         try {
             ActivityCompat.requestPermissions(requireActivity(), arrayOf(permission), REQUEST_CODE_PROCESS_OUTGOING_CALLS)

@@ -96,7 +96,11 @@ class SendWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     return@withContext Result.failure(workDataOf("send" to "failed"))
                 }
 
-                val msg = Msg(0, msgInfo.type, msgInfo.from, msgInfo.content, msgInfo.simSlot, msgInfo.simInfo, msgInfo.subId, msgInfo.callType).also {
+                //time 用 msgInfo.date（而非插入时刻），让幂等键里的 [receive_time] 在首发/补投/每日汇总重读时完全一致：
+                //retrySendMsg 会用 msg.time 重建 msgInfo.date，每日汇总把 msgInfo.date 设为通话/短信的真实发生时间，
+                //于是同一通话无论走哪条路径、被重读几次，md5([device_mark]+[from]+[receive_time]+[org_content]) 都相同，服务端可稳定去重。
+                //实时路径下 msgInfo.date≈now，与原插入时刻仅差数秒，无可见影响。
+                val msg = Msg(0, msgInfo.type, msgInfo.from, msgInfo.content, msgInfo.simSlot, msgInfo.simInfo, msgInfo.subId, msgInfo.callType, msgInfo.date).also {
                     //持久化通话结构化字段，供 retrySendMsg 补投时重建（T5）
                     it.callDuration = msgInfo.callDuration
                     it.callDateLong = msgInfo.callDateLong

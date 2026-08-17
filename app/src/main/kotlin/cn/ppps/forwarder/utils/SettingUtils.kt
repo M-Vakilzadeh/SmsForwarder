@@ -107,6 +107,15 @@ class SettingUtils private constructor() {
         //请求接口失败超时时间（秒，默认 30：伊朗移动数据下 10s 过于紧张）
         var requestTimeout: Int by SharedPreference(SP_REQUEST_TIMEOUT, 30)
 
+        //转发时机：0=实时，1=每日汇总（默认实时，保持原行为）
+        var forwardTiming: Int by SharedPreference(SP_FORWARD_TIMING, FORWARD_TIMING_REALTIME)
+        //每日汇总转发时间（timePeriodOption 下标，126=21:00）
+        var dailyForwardTime: Int by SharedPreference(SP_DAILY_FORWARD_TIME, 126)
+        //每日汇总包含通话记录（默认开：本项目以通话 KPI 为主）
+        var dailyIncludeCall: Boolean by SharedPreference(SP_DAILY_INCLUDE_CALL, true)
+        //每日汇总包含短信（默认关）
+        var dailyIncludeSms: Boolean by SharedPreference(SP_DAILY_INCLUDE_SMS, false)
+
         //通知内容
         var notifyContent: String by SharedPreference(SP_NOTIFY_CONTENT, getString(R.string.notification_content))
 

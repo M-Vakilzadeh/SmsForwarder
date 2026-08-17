@@ -84,6 +84,19 @@ const val SP_REQUEST_RETRY_TIMES = "request_retry_times"
 const val SP_REQUEST_DELAY_TIME = "request_delay_time"
 const val SP_REQUEST_TIMEOUT = "request_timeout"
 
+//转发时机：0=实时（每次通话/短信后立即转发），1=每日汇总（每天定时统一转发）
+const val SP_FORWARD_TIMING = "forward_timing"
+//每日汇总转发时间（timePeriodOption 的下标，10 分钟一档，144 档；126=21:00）
+const val SP_DAILY_FORWARD_TIME = "daily_forward_time"
+//每日汇总是否包含通话记录
+const val SP_DAILY_INCLUDE_CALL = "daily_include_call"
+//每日汇总是否包含短信
+const val SP_DAILY_INCLUDE_SMS = "daily_include_sms"
+
+//转发时机取值
+const val FORWARD_TIMING_REALTIME = 0
+const val FORWARD_TIMING_DAILY = 1
+
 const val SP_NOTIFY_CONTENT = "notify_content"
 const val SP_EXTRA_DEVICE_MARK = "extra_device_mark"
 const val SP_SUBID_SIM1 = "subid_sim1"

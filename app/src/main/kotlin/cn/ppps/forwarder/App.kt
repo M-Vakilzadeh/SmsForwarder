@@ -31,6 +31,7 @@ import cn.ppps.forwarder.receiver.BluetoothReceiver
 import cn.ppps.forwarder.receiver.CactusReceiver
 import cn.ppps.forwarder.receiver.LockScreenReceiver
 import cn.ppps.forwarder.receiver.NetworkChangeReceiver
+import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.workers.SweepWorker
 import cn.ppps.forwarder.service.BluetoothScanService
 import cn.ppps.forwarder.service.ForegroundService
@@ -261,6 +262,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             SweepWorker.enqueuePeriodic(this)
             //启动即补投一次：App 曾被强杀多日后再次打开时（网络本就在，不会触发联网事件），立即把积压日志补出去
             SweepWorker.enqueueOnce(this)
+            //每日汇总转发：按当前设置安排/取消定时任务（非每日模式会自动取消）
+            DailyForwardWorker.schedule(this)
 
             //监听锁屏&解锁
             val lockScreenReceiver = LockScreenReceiver()

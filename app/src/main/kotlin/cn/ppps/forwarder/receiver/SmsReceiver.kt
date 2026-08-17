@@ -10,6 +10,7 @@ import androidx.work.workDataOf
 import com.google.gson.Gson
 import cn.ppps.forwarder.App
 import cn.ppps.forwarder.entity.MsgInfo
+import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
 import cn.ppps.forwarder.utils.SettingUtils
@@ -70,6 +71,12 @@ class SmsReceiver : BroadcastReceiver() {
 
             //总开关
             if (!SettingUtils.enableSms) return
+
+            //每日汇总模式下不实时转发短信，改由 DailyForwardWorker 到点统一读短信库转发（短信指令不受影响，上面已处理）
+            if (SettingUtils.forwardTiming == FORWARD_TIMING_DAILY && SettingUtils.dailyIncludeSms) {
+                Log.d(TAG, "每日汇总模式，跳过实时短信转发")
+                return
+            }
 
             //TODO：准确获取卡槽信息，目前测试结果只有 subscription 相对靠谱
             val slot = intent.extras?.getInt("slot") ?: -1

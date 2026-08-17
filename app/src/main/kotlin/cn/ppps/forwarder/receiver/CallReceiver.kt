@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import cn.ppps.forwarder.App.Companion.CALL_TYPE_MAP
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.entity.MsgInfo
+import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
 import cn.ppps.forwarder.utils.SettingUtils
@@ -31,6 +32,12 @@ open class CallReceiver : PhoneStateReceiver() {
         //callLogMissing：通话记录在超时时间内始终没有落库，此条记录没有真实通话时长
         fun sendNotice(context: Context, callType: Int, phoneNumber: String?, callLogMissing: Boolean = false) {
             if (TextUtils.isEmpty(phoneNumber)) return
+
+            //每日汇总模式下不实时转发通话，改由 DailyForwardWorker 到点统一读通话记录转发
+            if (SettingUtils.forwardTiming == FORWARD_TIMING_DAILY && SettingUtils.dailyIncludeCall) {
+                Log.d(TAG, "每日汇总模式，跳过实时通话通知，callType=$callType")
+                return
+            }
 
             //判断是否开启该类型转发
             if ((callType == 4 && !SettingUtils.enableCallType4) || (callType == 5 && !SettingUtils.enableCallType5) || (callType == 6 && !SettingUtils.enableCallType6)) {
@@ -102,6 +109,11 @@ open class CallReceiver : PhoneStateReceiver() {
     //拨号器是异步写入通话记录的，这里不再在主线程 sleep 等待，改为交给 CallLogWorker 轮询，
     //并且只接受时间戳不早于本次通话开始时间的记录，避免匹配到同一号码更早的那一通电话。
     private fun sendCallMsg(context: Context, callType: Int, phoneNumber: String?, start: Date) {
+        //每日汇总模式下不实时转发通话记录，改由 DailyForwardWorker 到点统一处理
+        if (SettingUtils.forwardTiming == FORWARD_TIMING_DAILY && SettingUtils.dailyIncludeCall) {
+            Log.d(TAG, "每日汇总模式，跳过实时通话转发，callType=$callType")
+            return
+        }
         Log.d(TAG, "callType = $callType, phoneNumber = $phoneNumber, callStart = $start")
 
         val request = OneTimeWorkRequestBuilder<CallLogWorker>().setInputData(

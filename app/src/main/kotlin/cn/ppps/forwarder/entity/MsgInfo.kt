@@ -36,6 +36,10 @@ data class MsgInfo(
     var uid: Int = 0, //APP通知的UID
     //通话记录在超时时间内没有落库：本条记录没有真实通话时长，服务端据此区分「查不到记录」和「真实时长为0」
     var callLogMissing: Boolean = false,
+    //通话时长（秒），无则 0 —— 对应不本地化的 {{CALL_DURATION}}
+    var callDuration: Int = 0,
+    //通话发生时间（运营商记录里的 date，毫秒），非转发时间 —— 对应不本地化的 {{CALL_DATE}}
+    var callDateLong: Long = 0L,
 ) : Serializable {
 
     val titleForSend = getTitleForSend()
@@ -107,8 +111,15 @@ data class MsgInfo(
                 getString(R.string.tag_call_type),
                 CALL_TYPE_MAP[callType.toString()] ?: getString(R.string.unknown_call), encoderName
             )
-            //不做本地化：服务端需要稳定可解析的值
+            //以下均不做本地化：服务端需要稳定可解析的值
             .replaceTag(getString(R.string.tag_call_log_missing), callLogMissing.toString(), encoderName)
+            .replaceTag(getString(R.string.tag_call_duration), callDuration.toString(), encoderName)
+            .replaceTag(getString(R.string.tag_call_type_code), callType.toString(), encoderName)
+            .replaceTag(
+                getString(R.string.tag_call_date),
+                if (callDateLong > 0L) SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date(callDateLong)) else "",
+                encoderName
+            )
             .replaceTag(getString(R.string.tag_ipv4), TaskUtils.ipv4, encoderName)
             .replaceTag(getString(R.string.tag_ipv6), TaskUtils.ipv6, encoderName)
             .replaceTag(getString(R.string.tag_ip_list), TaskUtils.ipList, encoderName)

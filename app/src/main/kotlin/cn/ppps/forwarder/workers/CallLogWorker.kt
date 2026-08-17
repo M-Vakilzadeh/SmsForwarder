@@ -87,6 +87,9 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
             val number = callInfo.number.ifBlank { phoneNumber ?: "" }
             val msgInfo = MsgInfo("call", number, PhoneUtils.getCallMsg(callInfo), Date(), simInfo, simSlot, callInfo.subId, callType)
+            //结构化字段（T5）：不本地化，服务端可稳定解析
+            msgInfo.callDuration = callInfo.duration
+            msgInfo.callDateLong = callInfo.dateLong
             CallReceiver.enqueueSend(applicationContext, msgInfo)
 
         } catch (e: Exception) {

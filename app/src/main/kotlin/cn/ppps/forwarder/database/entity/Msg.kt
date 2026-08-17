@@ -28,6 +28,11 @@ data class Msg(
     //通话类型：1.来电挂机 2.去电挂机 3.未接来电 4.来电提醒 5.来电接通 6.去电拨出
     @ColumnInfo(name = "call_type", defaultValue = "0") var callType: Int = 0,
     @ColumnInfo(name = "time") var time: Date = Date(),
+    //以下为通话结构化字段，必须持久化：SendUtils.retrySendMsg 会从存储行重建 MsgInfo，
+    //否则每次补投都会带空值（T5）
+    @ColumnInfo(name = "call_duration", defaultValue = "0") var callDuration: Int = 0,
+    @ColumnInfo(name = "call_date_long", defaultValue = "0") var callDateLong: Long = 0L,
+    @ColumnInfo(name = "call_log_missing", defaultValue = "0") var callLogMissing: Boolean = false,
 ) : Parcelable {
 
     val simImageId: Int

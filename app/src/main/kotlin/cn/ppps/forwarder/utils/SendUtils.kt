@@ -55,7 +55,11 @@ object SendUtils {
 
     //重新匹配规则并发送消息
     fun rematchSendMsg(item: MsgAndLogs) {
-        val msgInfo = MsgInfo(item.msg.type, item.msg.from, item.msg.content, item.msg.time, item.msg.simInfo, item.msg.simSlot, item.msg.subId)
+        val msgInfo = MsgInfo(item.msg.type, item.msg.from, item.msg.content, item.msg.time, item.msg.simInfo, item.msg.simSlot, item.msg.subId, item.msg.callType)
+        //从存储行重建通话结构化字段（T5），否则补投/重匹配会丢失 callType/时长/通话时间
+        msgInfo.callDuration = item.msg.callDuration
+        msgInfo.callDateLong = item.msg.callDateLong
+        msgInfo.callLogMissing = item.msg.callLogMissing
         Log.d(TAG, "msgInfo = $msgInfo")
 
         val request = OneTimeWorkRequestBuilder<SendWorker>().setInputData(
@@ -69,7 +73,11 @@ object SendUtils {
     //重试发送消息
     fun retrySendMsg(logId: Long) {
         val item = Core.logs.getOne(logId)
-        val msgInfo = MsgInfo(item.msg.type, item.msg.from, item.msg.content, item.msg.time, item.msg.simInfo, item.msg.simSlot, item.msg.subId)
+        val msgInfo = MsgInfo(item.msg.type, item.msg.from, item.msg.content, item.msg.time, item.msg.simInfo, item.msg.simSlot, item.msg.subId, item.msg.callType)
+        //从存储行重建通话结构化字段（T5），否则补投会丢失 callType/时长/通话时间
+        msgInfo.callDuration = item.msg.callDuration
+        msgInfo.callDateLong = item.msg.callDateLong
+        msgInfo.callLogMissing = item.msg.callLogMissing
         Log.d(TAG, "msgInfo = $msgInfo")
 
         var senderIndex = 0

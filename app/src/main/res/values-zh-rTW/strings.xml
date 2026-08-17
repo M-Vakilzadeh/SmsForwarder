@@ -13,6 +13,9 @@
     <string name="insert_tag_device_name">設備名稱</string>
     <string name="insert_tag_app_version">SmsF版本</string>
     <string name="insert_tag_call_type">通話類型</string>
+    <string name="insert_tag_call_duration">通話時長</string>
+    <string name="insert_tag_call_type_code">通話類型碼</string>
+    <string name="insert_tag_call_date">通話時間</string>
     <string name="insert_tag_location">定位資訊</string>
     <string name="insert_tag_location_longitude">定位經度</string>
     <string name="insert_tag_location_latitude">定位緯度</string>

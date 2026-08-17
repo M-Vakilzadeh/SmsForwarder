@@ -96,7 +96,12 @@ class SendWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     return@withContext Result.failure(workDataOf("send" to "failed"))
                 }
 
-                val msg = Msg(0, msgInfo.type, msgInfo.from, msgInfo.content, msgInfo.simSlot, msgInfo.simInfo, msgInfo.subId, msgInfo.callType)
+                val msg = Msg(0, msgInfo.type, msgInfo.from, msgInfo.content, msgInfo.simSlot, msgInfo.simInfo, msgInfo.subId, msgInfo.callType).also {
+                    //持久化通话结构化字段，供 retrySendMsg 补投时重建（T5）
+                    it.callDuration = msgInfo.callDuration
+                    it.callDateLong = msgInfo.callDateLong
+                    it.callLogMissing = msgInfo.callLogMissing
+                }
                 val msgId = Core.msg.insert(msg)
                 for (rule in ruleListMatched) {
                     val sender = rule.senderList[0]

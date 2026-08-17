@@ -13,6 +13,9 @@
     <string name="insert_tag_device_name">Device Name</string>
     <string name="insert_tag_app_version">SmsF Version</string>
     <string name="insert_tag_call_type">Call Type</string>
+    <string name="insert_tag_call_duration">Call Duration</string>
+    <string name="insert_tag_call_type_code">Call Type Code</string>
+    <string name="insert_tag_call_date">Call Time</string>
     <string name="insert_tag_location">Location</string>
     <string name="insert_tag_location_longitude">Longitude</string>
     <string name="insert_tag_location_latitude">Latitude</string>

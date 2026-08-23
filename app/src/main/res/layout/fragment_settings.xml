@@ -1135,6 +1135,46 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="@string/batch_interval_label"
+                            android:textStyle="bold"
+                            tools:ignore="RelativeOverlap" />
+
+                        <TextView
+                            android:id="@+id/tv_batch_interval"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:gravity="center" />
+
+                        <com.xuexiang.xui.widget.button.shadowbutton.RippleShadowShadowButton
+                            android:id="@+id/btn_batch_interval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:gravity="center"
+                            android:padding="3dp"
+                            android:text="@string/select"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_mini"
+                            app:sb_color_unpressed="@color/colorPrimary"
+                            app:sb_ripple_color="@color/white"
+                            app:sb_ripple_duration="500"
+                            app:sb_shape_type="rectangle"
+                            tools:ignore="PrivateResource,SmallSp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_daily_forward_time_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:text="@string/daily_forward_time_label"
                             android:textStyle="bold"
                             tools:ignore="RelativeOverlap" />

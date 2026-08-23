@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.entity.MsgInfo
 import cn.ppps.forwarder.receiver.CallReceiver
+import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
@@ -43,7 +44,9 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
                 return@withContext Result.success()
             }
 
-            val windowStart = System.currentTimeMillis() - WINDOW_MILLIS
+            //窗口 = 周期 + 1 小时重叠，宁可重复也不漏（重复由服务端幂等去重兜底）
+            val windowMillis = (SettingUtils.batchIntervalMinutes.toLong() + OVERLAP_MINUTES) * 60_000L
+            val windowStart = System.currentTimeMillis() - windowMillis
 
             if (SettingUtils.dailyIncludeCall) forwardCalls(windowStart)
             if (SettingUtils.dailyIncludeSms) forwardSms(windowStart)
@@ -116,31 +119,44 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
         private const val TAG = "DailyForwardWorker"
         private const val UNIQUE = "daily_forward_digest"
 
-        //窗口：最近 25 小时（1 小时重叠，宁可重复也不漏）
-        private const val WINDOW_MILLIS = 25L * 60 * 60 * 1000
+        //读取窗口在周期基础上多留 1 小时重叠，宁可重复也不漏（重复由服务端幂等去重兜底）
+        private const val OVERLAP_MINUTES = 60L
+
+        //WorkManager 周期下限即 15 分钟
+        private const val MIN_PERIOD_MINUTES = 15L
 
         //单次读取上限，避免极端情况一次拉爆内存
         private const val MAX_ROWS = 500
 
         /**
-         * 按当前设置（重新）安排每日汇总任务。
+         * 按当前设置（重新）安排定时汇总任务。
          * - 非每日模式：取消任务；
-         * - 每日模式：以「距下一个设定时间点」为初始延迟，安排 24 小时周期任务。
+         * - 每天定时(间隔>=1440)：以「距下一个设定时间点」为初始延迟，安排 24 小时周期任务；
+         * - 每 N 分钟：安排 N 分钟周期任务（下限 15 分钟）。
          *
-         * 用 REPLACE：每次调用都按最新时间重新锚定到「下一个设定时间」，设置变更或重启后都能生效。
+         * 用 REPLACE：每次调用都按最新设置重新锚定，设置变更或重启后都能生效。
          */
         fun schedule(context: Context) {
             val wm = WorkManager.getInstance(context)
             if (SettingUtils.forwardTiming != FORWARD_TIMING_DAILY) {
                 wm.cancelUniqueWork(UNIQUE)
-                Log.d(TAG, "非每日模式，已取消每日汇总任务")
+                Log.d(TAG, "非定时汇总模式，已取消任务")
                 return
             }
-            val request = PeriodicWorkRequestBuilder<DailyForwardWorker>(24, TimeUnit.HOURS)
-                .setInitialDelay(computeInitialDelayMillis(), TimeUnit.MILLISECONDS)
-                .build()
-            wm.enqueueUniquePeriodicWork(UNIQUE, ExistingPeriodicWorkPolicy.REPLACE, request)
-            Log.d(TAG, "已安排每日汇总任务，初始延迟 ${computeInitialDelayMillis() / 60000} 分钟")
+            val interval = SettingUtils.batchIntervalMinutes
+            val request = if (interval >= BATCH_INTERVAL_DAILY) {
+                //每天定时：24 小时周期 + 初始延迟到下一个设定时间点
+                PeriodicWorkRequestBuilder<DailyForwardWorker>(24, TimeUnit.HOURS)
+                    .setInitialDelay(computeInitialDelayMillis(), TimeUnit.MILLISECONDS)
+                    .build()
+            } else {
+                //每 N 分钟
+                val period = interval.toLong().coerceAtLeast(MIN_PERIOD_MINUTES)
+                PeriodicWorkRequestBuilder<DailyForwardWorker>(period, TimeUnit.MINUTES).build()
+            }
+            //CANCEL_AND_REENQUEUE（即旧 REPLACE 的非废弃写法）：变更间隔/时间后立即按新排程重来
+            wm.enqueueUniquePeriodicWork(UNIQUE, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, request)
+            Log.d(TAG, "已安排定时汇总任务，interval=${interval}min")
         }
 
         //根据设置的时间下标（10 分钟一档）算出距离下一个该时间点的毫秒数

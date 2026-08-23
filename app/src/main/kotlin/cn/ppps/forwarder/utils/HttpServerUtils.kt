@@ -5,6 +5,7 @@ import android.text.TextUtils
 import android.util.Base64
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.core.Core
+import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.entity.CloneInfo
 import cn.ppps.forwarder.entity.LocationInfo
 import cn.ppps.forwarder.server.model.BaseRequest
@@ -220,6 +221,9 @@ class HttpServerUtils private constructor() {
                         Core.task.insert(task)
                     }
                 }
+                //导入的设置里含「转发时机/周期」，进程通常不重启(App.onCreate 不会重跑)，
+                //这里按导入后的设置重排定时汇总任务，使其立即生效
+                DailyForwardWorker.schedule(Core.app)
                 true
             } catch (e: Exception) {
                 e.printStackTrace()

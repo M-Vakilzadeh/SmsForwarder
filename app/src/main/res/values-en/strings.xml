@@ -901,6 +901,16 @@
     <string name="daily_forward_time_label">Daily Forward Time</string>
     <string name="daily_forward_include_call">Include Calls</string>
     <string name="daily_forward_include_sms">Include SMS</string>
+    <string name="batch_interval_label">Forward Interval</string>
+    <string name="batch_interval_every_minutes">Every %1$d min</string>
+    <string name="batch_interval_every_hours">Every %1$d h</string>
+    <string name="batch_interval_daily">Daily at set time</string>
+    <string name="skip">Skip</string>
+    <string name="provision_import_title">Import Config</string>
+    <string name="provision_import_content">New device detected. You can download and import the configuration (rules, senders, settings) in one tap to speed up setup.</string>
+    <string name="provision_import_url_hint">Config file URL</string>
+    <string name="provision_import_download">Download &amp; Import</string>
+    <string name="provision_downloading">Downloading config…</string>
     <string name="download_frpc_tips">Do you want to download and restart to load!</string>
     <string name="download_frpc_tips2">Download successful, do you want to restart the loading now?</string>
     <string name="appkey">AppKey</string>

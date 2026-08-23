@@ -109,8 +109,10 @@ class SettingUtils private constructor() {
 
         //转发时机：0=实时，1=每日汇总（默认实时，保持原行为）
         var forwardTiming: Int by SharedPreference(SP_FORWARD_TIMING, FORWARD_TIMING_REALTIME)
-        //每日汇总转发时间（timePeriodOption 下标，126=21:00）
+        //每日汇总转发时间（timePeriodOption 下标，126=21:00）——仅「每天定时」间隔下生效
         var dailyForwardTime: Int by SharedPreference(SP_DAILY_FORWARD_TIME, 126)
+        //定时汇总周期（分钟），默认 1440=每天定时
+        var batchIntervalMinutes: Int by SharedPreference(SP_BATCH_INTERVAL_MINUTES, BATCH_INTERVAL_DAILY)
         //每日汇总包含通话记录（默认开：本项目以通话 KPI 为主）
         var dailyIncludeCall: Boolean by SharedPreference(SP_DAILY_INCLUDE_CALL, true)
         //每日汇总包含短信（默认关）

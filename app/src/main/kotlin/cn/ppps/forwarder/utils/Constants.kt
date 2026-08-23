@@ -86,8 +86,12 @@ const val SP_REQUEST_TIMEOUT = "request_timeout"
 
 //转发时机：0=实时（每次通话/短信后立即转发），1=每日汇总（每天定时统一转发）
 const val SP_FORWARD_TIMING = "forward_timing"
-//每日汇总转发时间（timePeriodOption 的下标，10 分钟一档，144 档；126=21:00）
+//每日汇总转发时间（timePeriodOption 的下标，10 分钟一档，144 档；126=21:00）——仅在「每天定时」间隔下生效
 const val SP_DAILY_FORWARD_TIME = "daily_forward_time"
+//定时汇总转发的周期（分钟）：<1440 表示每 N 分钟一次；>=1440 表示每天在 daily_forward_time 定时一次
+const val SP_BATCH_INTERVAL_MINUTES = "batch_interval_minutes"
+//每天定时（分钟数值），也是周期选项里的“daily”档
+const val BATCH_INTERVAL_DAILY = 1440
 //每日汇总是否包含通话记录
 const val SP_DAILY_INCLUDE_CALL = "daily_include_call"
 //每日汇总是否包含短信
@@ -99,6 +103,10 @@ const val FORWARD_TIMING_DAILY = 1
 
 //最近一次转发成功的时间戳（供心跳上报，判断设备是否还在正常出数据）
 const val SP_LAST_FORWARD_SUCCESS_TIME = "last_forward_success_time"
+
+//新机首次打开时，弹窗提示从该地址下载并导入配置（批量装机加速）。留空则弹窗里手动填写。
+//部署时把这里改成你的配置 JSON 地址（即 SmsForwarder.json 的导出格式）即可。
+const val DEFAULT_CONFIG_IMPORT_URL = ""
 
 const val SP_NOTIFY_CONTENT = "notify_content"
 const val SP_EXTRA_DEVICE_MARK = "extra_device_mark"

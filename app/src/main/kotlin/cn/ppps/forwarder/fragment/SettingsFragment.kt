@@ -39,6 +39,7 @@ import cn.ppps.forwarder.databinding.FragmentSettingsBinding
 import cn.ppps.forwarder.entity.SimInfo
 import cn.ppps.forwarder.fragment.client.CloneFragment
 import cn.ppps.forwarder.receiver.BootCompletedReceiver
+import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_REALTIME
 import cn.ppps.forwarder.workers.DailyForwardWorker
@@ -235,6 +236,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
 
     override fun initListeners() {
         binding!!.btnSilentPeriod.setOnClickListener(this)
+        binding!!.btnBatchInterval.setOnClickListener(this)
         binding!!.btnDailyForwardTime.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
@@ -259,6 +261,24 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     return@OnOptionsSelectListener false
                 }).setTitleText(getString(R.string.select_time_period)).setSelectOptions(SettingUtils.silentPeriodStart, SettingUtils.silentPeriodEnd).build<Any>().also {
                     it.setNPicker(mTimeOption, mTimeOption)
+                    it.show()
+                }
+            }
+
+            R.id.btn_batch_interval -> {
+                val labels = batchIntervalOptions.map { batchIntervalLabel(it) }
+                val currentIdx = batchIntervalOptions.indexOf(SettingUtils.batchIntervalMinutes).let {
+                    if (it < 0) batchIntervalOptions.indexOf(BATCH_INTERVAL_DAILY) else it
+                }
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    val chosen = batchIntervalOptions[options1]
+                    SettingUtils.batchIntervalMinutes = chosen
+                    binding!!.tvBatchInterval.text = batchIntervalLabel(chosen)
+                    binding!!.layoutDailyForwardTimeRow.visibility = if (chosen >= BATCH_INTERVAL_DAILY) View.VISIBLE else View.GONE
+                    DailyForwardWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.batch_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
+                    it.setPicker(labels)
                     it.show()
                 }
             }
@@ -429,10 +449,23 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         }
     }
 
-    //转发时机：实时 / 每日汇总
+    //转发周期可选项（分钟）：15/30 分钟、1/2/3/6/12 小时、每天定时
+    private val batchIntervalOptions = listOf(15, 30, 60, 120, 180, 360, 720, BATCH_INTERVAL_DAILY)
+
+    private fun batchIntervalLabel(minutes: Int): String {
+        return when {
+            minutes >= BATCH_INTERVAL_DAILY -> getString(R.string.batch_interval_daily)
+            minutes >= 60 -> getString(R.string.batch_interval_every_hours, minutes / 60)
+            else -> getString(R.string.batch_interval_every_minutes, minutes)
+        }
+    }
+
+    //转发时机：实时 / 定时汇总
     @SuppressLint("SetTextI18n")
     private fun setupDailyForward() {
         binding!!.tvDailyForwardTime.text = mTimeOption[SettingUtils.dailyForwardTime]
+        binding!!.tvBatchInterval.text = batchIntervalLabel(SettingUtils.batchIntervalMinutes)
+        binding!!.layoutDailyForwardTimeRow.visibility = if (SettingUtils.batchIntervalMinutes >= BATCH_INTERVAL_DAILY) View.VISIBLE else View.GONE
         binding!!.scbDailyIncludeCall.isChecked = SettingUtils.dailyIncludeCall
         binding!!.scbDailyIncludeSms.isChecked = SettingUtils.dailyIncludeSms
 

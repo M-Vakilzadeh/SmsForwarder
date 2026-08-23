@@ -902,6 +902,16 @@
     <string name="daily_forward_time_label">每日轉發時間</string>
     <string name="daily_forward_include_call">包含通話</string>
     <string name="daily_forward_include_sms">包含簡訊</string>
+    <string name="batch_interval_label">轉發週期</string>
+    <string name="batch_interval_every_minutes">每 %1$d 分鐘</string>
+    <string name="batch_interval_every_hours">每 %1$d 小時</string>
+    <string name="batch_interval_daily">每天定時</string>
+    <string name="skip">跳過</string>
+    <string name="provision_import_title">匯入設定</string>
+    <string name="provision_import_content">偵測到新裝置，可從伺服器下載並一鍵匯入設定（轉發規則、傳送通道、各項設定），加快裝機。</string>
+    <string name="provision_import_url_hint">設定檔位址(URL)</string>
+    <string name="provision_import_download">下載並匯入</string>
+    <string name="provision_downloading">正在下載設定…</string>
     <string name="download_frpc_tips">是否立即下載，並重啟加載？</string>
     <string name="download_frpc_tips2">下載成功，是否立即重啟加載？</string>
     <string name="appkey">AppKey</string>

@@ -42,6 +42,8 @@ import cn.ppps.forwarder.fragment.client.CloneFragment
 import cn.ppps.forwarder.receiver.BootCompletedReceiver
 import cn.ppps.forwarder.utils.AppLockUtils
 import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
+import cn.ppps.forwarder.utils.EVENT_TOAST_ERROR
+import cn.ppps.forwarder.utils.EVENT_TOAST_SUCCESS
 import cn.ppps.forwarder.utils.ProvisionUtils
 import cn.ppps.forwarder.workers.NetAlertWorker
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
@@ -246,7 +248,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.btnDailyForwardTime.setOnClickListener(this)
         binding!!.btnAppLock.setOnClickListener(this)
         binding!!.btnOnlineImport.setOnClickListener(this)
+        binding!!.btnOnlineImportTest.setOnClickListener(this)
         binding!!.btnNetAlertUrl.setOnClickListener(this)
+        binding!!.btnNetAlertTest.setOnClickListener(this)
         binding!!.btnNetAlertInterval.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
@@ -322,6 +326,37 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     .positiveText(R.string.online_import_update)
                     .negativeText(R.string.cancel)
                     .show()
+            }
+
+            R.id.btn_online_import_test -> {
+                val url = SettingUtils.configImportUrl.trim()
+                if (url.isEmpty()) {
+                    XToastUtils.error(getString(R.string.provision_import_url_hint))
+                    return
+                }
+                XToastUtils.toast(getString(R.string.testing))
+                ProvisionUtils.testConfigUrl(url) { ok: Boolean, msg: String ->
+                    if (ok) XToastUtils.success(getString(R.string.test_ok) + " " + msg)
+                    else XToastUtils.error(getString(R.string.test_failed) + " " + msg)
+                }
+            }
+
+            R.id.btn_net_alert_test -> {
+                val url = SettingUtils.netAlertUrl.trim()
+                if (url.isEmpty()) {
+                    XToastUtils.error(getString(R.string.net_alert_url_prompt))
+                    return
+                }
+                XToastUtils.toast(getString(R.string.testing))
+                //网络请求必须在子线程；结果通过 LiveEventBus 回主线程吐司（与各发送通道测试按钮一致）
+                Thread {
+                    val result = NetAlertWorker.sendTest(url)
+                    if (result.first) {
+                        LiveEventBus.get(EVENT_TOAST_SUCCESS, String::class.java).post(getString(R.string.test_ok) + " " + result.second)
+                    } else {
+                        LiveEventBus.get(EVENT_TOAST_ERROR, String::class.java).post(getString(R.string.test_failed) + " " + result.second)
+                    }
+                }.start()
             }
 
             R.id.btn_net_alert_url -> {
@@ -565,7 +600,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     }
                     .show()
             } else {
-                XToastUtils.error(getString(R.string.import_failed) + (if (msg != null) ": $msg" else ""))
+                XToastUtils.error(getString(R.string.online_import_failed) + (msg ?: ""))
             }
         }
     }

@@ -197,7 +197,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
                     }
                     .show()
             } else {
-                XToastUtils.error(getString(R.string.import_failed) + (if (msg != null) ": $msg" else ""))
+                XToastUtils.error(getString(R.string.online_import_failed) + (msg ?: ""))
             }
         }
     }

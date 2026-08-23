@@ -72,6 +72,36 @@ class NetAlertWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val MIN_PERIOD_MINUTES = 15L
 
         /**
+         * 立即向指定地址发一条测试上报，返回 (是否成功, 说明)。必须在子线程调用。
+         * 与定时上报走同一套构造与校验逻辑，测试通过即代表正式上报也能通。
+         */
+        fun sendTest(url: String): Pair<Boolean, String> {
+            return try {
+                val netType = try {
+                    NetworkUtils.getNetStateType().name.removePrefix("NET_")
+                } catch (e: Exception) {
+                    "UNKNOWN"
+                }
+                val payload = mapOf(
+                    "device_mark" to SettingUtils.extraDeviceMark,
+                    "app_version" to AppUtils.getAppVersionName(),
+                    "connected" to (netType != "NO" && netType != "UNKNOWN"),
+                    "network_type" to netType,
+                    "timestamp" to System.currentTimeMillis(),
+                    "test" to true
+                )
+                val setting = WebhookSetting(webServer = url)
+                when (val r = WebhookSyncUtils.postJson(setting, url, Gson().toJson(payload))) {
+                    is WebhookResult.Success -> true to ("HTTP 200 " + r.body.take(120))
+                    is WebhookResult.RetryableFailure -> false to r.reason
+                    is WebhookResult.PermanentFailure -> false to r.reason
+                }
+            } catch (e: Exception) {
+                false to (e.message ?: "exception")
+            }
+        }
+
+        /**
          * 按当前设置（重新）安排网络告警任务。未开启/地址为空则取消。
          */
         fun schedule(context: Context) {

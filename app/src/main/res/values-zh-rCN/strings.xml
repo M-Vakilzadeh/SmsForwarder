@@ -930,6 +930,10 @@
     <string name="net_alert_url_label">Webhook 地址</string>
     <string name="net_alert_url_prompt">输入 webhook 地址</string>
     <string name="net_alert_interval_label">告警周期</string>
+    <string name="testing">正在测试…</string>
+    <string name="test_ok">测试成功：</string>
+    <string name="test_failed">测试失败：</string>
+    <string name="online_import_failed">在线导入失败：</string>
     <string name="download_frpc_tips">是否立即下载，并重启加载？</string>
     <string name="download_frpc_tips2">下载成功，是否立即重启加载？</string>
     <string name="appkey">AppKey</string>

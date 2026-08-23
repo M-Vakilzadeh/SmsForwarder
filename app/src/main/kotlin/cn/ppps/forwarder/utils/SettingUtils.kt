@@ -121,6 +121,17 @@ class SettingUtils private constructor() {
         //最近一次转发成功的时间戳（毫秒），供心跳上报
         var lastForwardSuccessTime: Long by SharedPreference(SP_LAST_FORWARD_SUCCESS_TIME, 0L)
 
+        //应用锁密码哈希（SHA-256），空=未设锁
+        var appLockHash: String by SharedPreference(SP_APP_LOCK_HASH, "")
+
+        //在线导入配置地址（持久化，默认取编译期常量）
+        var configImportUrl: String by SharedPreference(SP_CONFIG_IMPORT_URL, DEFAULT_CONFIG_IMPORT_URL)
+
+        //网络告警：开关 / webhook 地址 / 周期（分钟，默认 60）
+        var netAlertEnabled: Boolean by SharedPreference(SP_NET_ALERT_ENABLED, false)
+        var netAlertUrl: String by SharedPreference(SP_NET_ALERT_URL, "")
+        var netAlertInterval: Int by SharedPreference(SP_NET_ALERT_INTERVAL, 60)
+
         //通知内容
         var notifyContent: String by SharedPreference(SP_NOTIFY_CONTENT, getString(R.string.notification_content))
 

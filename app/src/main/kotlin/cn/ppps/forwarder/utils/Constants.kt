@@ -107,6 +107,16 @@ const val SP_LAST_FORWARD_SUCCESS_TIME = "last_forward_success_time"
 //新机首次打开时，弹窗提示从该地址下载并导入配置（批量装机加速）。留空则弹窗里手动填写。
 //部署时把这里改成你的配置 JSON 地址（即 SmsForwarder.json 的导出格式）即可。
 const val DEFAULT_CONFIG_IMPORT_URL = ""
+//在线导入配置的地址（持久化，设置页可修改，首次弹窗与「更新」按钮共用）；默认取上面的常量
+const val SP_CONFIG_IMPORT_URL = "config_import_url"
+
+//应用锁：打开 App 需要输入的密码的哈希（SHA-256）。空=未设锁。
+const val SP_APP_LOCK_HASH = "app_lock_hash"
+
+//网络状态告警：定时检查网络并调用用户设置的 webhook
+const val SP_NET_ALERT_ENABLED = "net_alert_enabled"
+const val SP_NET_ALERT_URL = "net_alert_url"
+const val SP_NET_ALERT_INTERVAL = "net_alert_interval_minutes"
 
 const val SP_NOTIFY_CONTENT = "notify_content"
 const val SP_EXTRA_DEVICE_MARK = "extra_device_mark"

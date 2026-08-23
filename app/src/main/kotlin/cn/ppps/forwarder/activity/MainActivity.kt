@@ -44,7 +44,6 @@ import cn.ppps.forwarder.utils.CommonUtils.Companion.restartApplication
 import cn.ppps.forwarder.utils.EVENT_LOAD_APP_LIST
 import cn.ppps.forwarder.utils.FRPC_LIB_DOWNLOAD_URL
 import cn.ppps.forwarder.utils.FRPC_LIB_VERSION
-import cn.ppps.forwarder.utils.DEFAULT_CONFIG_IMPORT_URL
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.ProvisionUtils
 import cn.ppps.forwarder.utils.SettingUtils
@@ -167,7 +166,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
                 .title(R.string.provision_import_title)
                 .content(R.string.provision_import_content)
                 .inputType(InputType.TYPE_TEXT_VARIATION_URI)
-                .input(getString(R.string.provision_import_url_hint), DEFAULT_CONFIG_IMPORT_URL, false) { _: MaterialDialog?, input: CharSequence? ->
+                .input(getString(R.string.provision_import_url_hint), SettingUtils.configImportUrl, false) { _: MaterialDialog?, input: CharSequence? ->
                     val url = input?.toString()?.trim() ?: ""
                     if (url.isNotEmpty()) doDownloadImport(url)
                 }
@@ -181,6 +180,8 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     }
 
     private fun doDownloadImport(url: String) {
+        //记住地址，供设置页「在线导入配置/更新」复用
+        SettingUtils.configImportUrl = url
         XToastUtils.toast(getString(R.string.provision_downloading))
         ProvisionUtils.downloadAndImport(url) { ok: Boolean, msg: String? ->
             if (ok) {

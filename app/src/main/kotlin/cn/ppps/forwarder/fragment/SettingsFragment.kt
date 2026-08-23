@@ -10,6 +10,7 @@ import android.location.Criteria
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.text.InputType
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextUtils
@@ -39,7 +40,10 @@ import cn.ppps.forwarder.databinding.FragmentSettingsBinding
 import cn.ppps.forwarder.entity.SimInfo
 import cn.ppps.forwarder.fragment.client.CloneFragment
 import cn.ppps.forwarder.receiver.BootCompletedReceiver
+import cn.ppps.forwarder.utils.AppLockUtils
 import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
+import cn.ppps.forwarder.utils.ProvisionUtils
+import cn.ppps.forwarder.workers.NetAlertWorker
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_REALTIME
 import cn.ppps.forwarder.workers.DailyForwardWorker
@@ -176,6 +180,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         }
         //转发时机：实时 / 每日汇总
         setupDailyForward()
+        //网络状态告警
+        setupNetAlert()
         //免打扰(禁用转发)时间段
         binding!!.tvSilentPeriod.text = mTimeOption[SettingUtils.silentPeriodStart] + " ~ " + mTimeOption[SettingUtils.silentPeriodEnd]
         binding!!.scbSilentPeriodLogs.isChecked = SettingUtils.enableSilentPeriodLogs
@@ -238,6 +244,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.btnSilentPeriod.setOnClickListener(this)
         binding!!.btnBatchInterval.setOnClickListener(this)
         binding!!.btnDailyForwardTime.setOnClickListener(this)
+        binding!!.btnAppLock.setOnClickListener(this)
+        binding!!.btnOnlineImport.setOnClickListener(this)
+        binding!!.btnNetAlertUrl.setOnClickListener(this)
+        binding!!.btnNetAlertInterval.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
         binding!!.btnExtraSim2.setOnClickListener(this)
@@ -278,6 +288,68 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     DailyForwardWorker.schedule(requireContext())
                     return@OnOptionsSelectListener false
                 }).setTitleText(getString(R.string.batch_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
+                    it.setPicker(labels)
+                    it.show()
+                }
+            }
+
+            R.id.btn_app_lock -> {
+                MaterialDialog.Builder(requireContext())
+                    .title(R.string.app_lock)
+                    .content(R.string.app_lock_set_prompt)
+                    .inputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
+                    .input(getString(R.string.app_lock_password_hint), "", true) { _: MaterialDialog?, input: CharSequence? ->
+                        val pwd = input?.toString() ?: ""
+                        AppLockUtils.setPassword(pwd)
+                        //刚设置密码的当前会话视为已解锁，避免立即把自己锁在门外（下次进入前台/重启才需要输入）
+                        App.appUnlocked = true
+                        XToastUtils.success(getString(if (pwd.isEmpty()) R.string.app_lock_cleared else R.string.app_lock_set_done))
+                    }
+                    .positiveText(R.string.confirm)
+                    .negativeText(R.string.cancel)
+                    .show()
+            }
+
+            R.id.btn_online_import -> {
+                MaterialDialog.Builder(requireContext())
+                    .title(R.string.online_import)
+                    .content(R.string.provision_import_url_hint)
+                    .inputType(InputType.TYPE_TEXT_VARIATION_URI)
+                    .input(getString(R.string.provision_import_url_hint), SettingUtils.configImportUrl, false) { _: MaterialDialog?, input: CharSequence? ->
+                        val url = input?.toString()?.trim() ?: ""
+                        if (url.isNotEmpty()) doOnlineImport(url)
+                    }
+                    .positiveText(R.string.online_import_update)
+                    .negativeText(R.string.cancel)
+                    .show()
+            }
+
+            R.id.btn_net_alert_url -> {
+                MaterialDialog.Builder(requireContext())
+                    .title(R.string.net_alert_url_label)
+                    .content(R.string.net_alert_url_prompt)
+                    .inputType(InputType.TYPE_TEXT_VARIATION_URI)
+                    .input(getString(R.string.net_alert_url_prompt), SettingUtils.netAlertUrl, true) { _: MaterialDialog?, input: CharSequence? ->
+                        val url = input?.toString()?.trim() ?: ""
+                        SettingUtils.netAlertUrl = url
+                        binding!!.tvNetAlertUrl.text = url
+                        NetAlertWorker.schedule(requireContext())
+                    }
+                    .positiveText(R.string.confirm)
+                    .negativeText(R.string.cancel)
+                    .show()
+            }
+
+            R.id.btn_net_alert_interval -> {
+                val labels = netAlertIntervalOptions.map { intervalLabelMinutes(it) }
+                val currentIdx = netAlertIntervalOptions.indexOf(SettingUtils.netAlertInterval).let { if (it < 0) 2 else it }
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    val chosen = netAlertIntervalOptions[options1]
+                    SettingUtils.netAlertInterval = chosen
+                    binding!!.tvNetAlertInterval.text = intervalLabelMinutes(chosen)
+                    NetAlertWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.net_alert_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
                     it.setPicker(labels)
                     it.show()
                 }
@@ -451,6 +523,52 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
 
     //转发周期可选项（分钟）：15/30 分钟、1/2/3/6/12 小时、每天定时
     private val batchIntervalOptions = listOf(15, 30, 60, 120, 180, 360, 720, BATCH_INTERVAL_DAILY)
+
+    //网络告警周期可选项（纯间隔，无「每天定时」语义）
+    private val netAlertIntervalOptions = listOf(15, 30, 60, 120, 180, 360, 720)
+
+    private fun intervalLabelMinutes(minutes: Int): String {
+        return if (minutes >= 60) getString(R.string.batch_interval_every_hours, minutes / 60)
+        else getString(R.string.batch_interval_every_minutes, minutes)
+    }
+
+    //网络状态告警：开关 + webhook 地址 + 周期
+    @SuppressLint("SetTextI18n")
+    private fun setupNetAlert() {
+        binding!!.tvNetAlertUrl.text = SettingUtils.netAlertUrl
+        binding!!.tvNetAlertInterval.text = intervalLabelMinutes(SettingUtils.netAlertInterval)
+        val enabled = SettingUtils.netAlertEnabled
+        binding!!.sbNetAlert.isChecked = enabled
+        binding!!.layoutNetAlertDetail.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding!!.sbNetAlert.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
+            SettingUtils.netAlertEnabled = isChecked
+            binding!!.layoutNetAlertDetail.visibility = if (isChecked) View.VISIBLE else View.GONE
+            NetAlertWorker.schedule(requireContext())
+        }
+    }
+
+    //在线下载配置并导入，成功后重启到主界面（与「一键换新机」导入一致）
+    private fun doOnlineImport(url: String) {
+        SettingUtils.configImportUrl = url
+        XToastUtils.toast(getString(R.string.provision_downloading))
+        ProvisionUtils.downloadAndImport(url) { ok: Boolean, msg: String? ->
+            if (ok) {
+                MaterialDialog.Builder(requireContext())
+                    .title(R.string.clone)
+                    .content(R.string.import_succeeded)
+                    .cancelable(false)
+                    .positiveText(R.string.confirm)
+                    .onPositive { _: MaterialDialog?, _: DialogAction? ->
+                        val intent = Intent(App.context, MainActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        startActivity(intent)
+                    }
+                    .show()
+            } else {
+                XToastUtils.error(getString(R.string.import_failed) + (if (msg != null) ": $msg" else ""))
+            }
+        }
+    }
 
     private fun batchIntervalLabel(minutes: Int): String {
         return when {

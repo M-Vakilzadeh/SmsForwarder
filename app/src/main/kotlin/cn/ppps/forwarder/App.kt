@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.location.Geocoder
+import android.os.Bundle
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -16,7 +17,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.multidex.MultiDex
 import androidx.work.Configuration
 import androidx.work.WorkManager
+import cn.ppps.forwarder.activity.AppLockActivity
 import cn.ppps.forwarder.activity.MainActivity
+import cn.ppps.forwarder.activity.SplashActivity
 import cn.ppps.forwarder.core.Core
 import cn.ppps.forwarder.database.AppDatabase
 import cn.ppps.forwarder.database.repository.FrpcRepository
@@ -33,6 +36,7 @@ import cn.ppps.forwarder.receiver.LockScreenReceiver
 import cn.ppps.forwarder.receiver.NetworkChangeReceiver
 import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.workers.HeartbeatWorker
+import cn.ppps.forwarder.workers.NetAlertWorker
 import cn.ppps.forwarder.workers.ReconcileWorker
 import cn.ppps.forwarder.workers.SweepWorker
 import cn.ppps.forwarder.service.BluetoothScanService
@@ -50,6 +54,7 @@ import cn.ppps.forwarder.utils.HistoryUtils
 import cn.ppps.forwarder.utils.HttpServerUtils
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.ProximitySensorScreenHelper
+import cn.ppps.forwarder.utils.AppLockUtils
 import cn.ppps.forwarder.utils.SettingUtils
 import cn.ppps.forwarder.utils.SharedPreference
 import cn.ppps.forwarder.utils.sdkinit.UMengInit
@@ -97,6 +102,10 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
 
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
+
+        //应用锁：本次会话是否已解锁（进程存活期间有效；退到后台会重置为 false 要求重新解锁）
+        @Volatile
+        var appUnlocked: Boolean = false
 
         //自定义模板可用变量标签
         var COMMON_TAG_MAP: MutableMap<String, String> = mutableMapOf()
@@ -156,6 +165,33 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
         MultiDex.install(this)
     }
 
+    //应用锁全局门禁：设了密码且未解锁时，任何非锁屏/非闪屏界面一到前台就盖上锁屏；整个 App 退到后台则要求重新解锁
+    private fun registerAppLockGate() {
+        registerActivityLifecycleCallbacks(object : android.app.Application.ActivityLifecycleCallbacks {
+            private var startedCount = 0
+            override fun onActivityStarted(activity: android.app.Activity) {
+                startedCount++
+                if (AppLockUtils.isLockSet() && !appUnlocked
+                    && activity !is AppLockActivity && activity !is SplashActivity
+                ) {
+                    activity.startActivity(Intent(activity, AppLockActivity::class.java))
+                }
+            }
+
+            override fun onActivityStopped(activity: android.app.Activity) {
+                startedCount--
+                //整个 App 退到后台，重置解锁状态
+                if (startedCount <= 0) appUnlocked = false
+            }
+
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityResumed(activity: android.app.Activity) {}
+            override fun onActivityPaused(activity: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: android.app.Activity) {}
+        })
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -183,6 +219,10 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
         try {
             context = applicationContext
             initLibs()
+
+            //应用锁：注册全局 Activity 生命周期回调，设了密码且未解锁时，任何界面前台即弹出锁屏；
+            //整个 App 退到后台则重置为未解锁，返回时需再次输入。放在最前，各模式都生效。
+            registerAppLockGate()
 
             //纯客户端模式
             if (SettingUtils.enablePureClientMode) return
@@ -270,6 +310,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             ReconcileWorker.enqueuePeriodic(this)
             //心跳（通道 D）：每 30 分钟上报设备状态，把静默失败变成当天可发现
             HeartbeatWorker.enqueuePeriodic(this)
+            //网络状态告警：按用户设置定时检查网络并调用其 webhook（未开启会自动取消）
+            NetAlertWorker.schedule(this)
 
             //监听锁屏&解锁
             val lockScreenReceiver = LockScreenReceiver()

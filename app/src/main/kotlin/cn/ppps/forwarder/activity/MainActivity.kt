@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,6 +25,7 @@ import cn.ppps.forwarder.adapter.menu.DrawerItem
 import cn.ppps.forwarder.adapter.menu.SimpleItem
 import cn.ppps.forwarder.adapter.menu.SpaceItem
 import cn.ppps.forwarder.core.BaseActivity
+import cn.ppps.forwarder.core.Core
 import cn.ppps.forwarder.core.webview.AgentWebActivity
 import cn.ppps.forwarder.databinding.ActivityMainBinding
 import cn.ppps.forwarder.fragment.AboutFragment
@@ -42,7 +44,9 @@ import cn.ppps.forwarder.utils.CommonUtils.Companion.restartApplication
 import cn.ppps.forwarder.utils.EVENT_LOAD_APP_LIST
 import cn.ppps.forwarder.utils.FRPC_LIB_DOWNLOAD_URL
 import cn.ppps.forwarder.utils.FRPC_LIB_VERSION
+import cn.ppps.forwarder.utils.DEFAULT_CONFIG_IMPORT_URL
 import cn.ppps.forwarder.utils.Log
+import cn.ppps.forwarder.utils.ProvisionUtils
 import cn.ppps.forwarder.utils.SettingUtils
 import cn.ppps.forwarder.utils.XToastUtils
 import cn.ppps.forwarder.utils.sdkinit.XUpdateInit
@@ -142,6 +146,57 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
         LiveEventBus.get(EVENT_LOAD_APP_LIST, String::class.java).observe(this) {
             if (needToAppListFragment) {
                 openNewPage(AppListFragment::class.java)
+            }
+        }
+
+        //新机首次打开：提示从指定地址下载并导入配置（批量装机加速）
+        maybeShowProvisionImport()
+    }
+
+    //新机首次打开时弹窗：从 URL 下载配置 JSON 并一键导入。仅在未提示过且尚未配置任何发送通道时出现。
+    private fun maybeShowProvisionImport() {
+        try {
+            if (ProvisionUtils.hasPrompted(this)) return
+            //已配置发送通道说明不是新机，直接标记为已提示，避免打扰
+            if (Core.sender.getAllNonCache().isNotEmpty()) {
+                ProvisionUtils.markPrompted(this)
+                return
+            }
+            ProvisionUtils.markPrompted(this)
+            MaterialDialog.Builder(this)
+                .title(R.string.provision_import_title)
+                .content(R.string.provision_import_content)
+                .inputType(InputType.TYPE_TEXT_VARIATION_URI)
+                .input(getString(R.string.provision_import_url_hint), DEFAULT_CONFIG_IMPORT_URL, false) { _: MaterialDialog?, input: CharSequence? ->
+                    val url = input?.toString()?.trim() ?: ""
+                    if (url.isNotEmpty()) doDownloadImport(url)
+                }
+                .positiveText(R.string.provision_import_download)
+                .negativeText(R.string.skip)
+                .cancelable(true)
+                .show()
+        } catch (e: Exception) {
+            Log.e(TAG, "maybeShowProvisionImport: ${e.message}")
+        }
+    }
+
+    private fun doDownloadImport(url: String) {
+        XToastUtils.toast(getString(R.string.provision_downloading))
+        ProvisionUtils.downloadAndImport(url) { ok: Boolean, msg: String? ->
+            if (ok) {
+                MaterialDialog.Builder(this)
+                    .title(R.string.clone)
+                    .content(R.string.import_succeeded)
+                    .cancelable(false)
+                    .positiveText(R.string.confirm)
+                    .onPositive { _: MaterialDialog?, _: DialogAction? ->
+                        val intent = Intent(App.context, MainActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        startActivity(intent)
+                    }
+                    .show()
+            } else {
+                XToastUtils.error(getString(R.string.import_failed) + (if (msg != null) ": $msg" else ""))
             }
         }
     }

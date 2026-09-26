@@ -46,6 +46,7 @@ import cn.ppps.forwarder.utils.FRPC_LIB_DOWNLOAD_URL
 import cn.ppps.forwarder.utils.FRPC_LIB_VERSION
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.ProvisionUtils
+import cn.ppps.forwarder.utils.CALL_NOTE_DISPLAY_POPUP
 import cn.ppps.forwarder.utils.SettingUtils
 import cn.ppps.forwarder.utils.XToastUtils
 import cn.ppps.forwarder.utils.sdkinit.XUpdateInit
@@ -99,6 +100,30 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
         return ActivityMainBinding.inflate(inflater!!)
     }
 
+    /**
+     * 通话备注可能是通过「配置导入」开启的（没有经过设置页开关），这里补一次权限申请：
+     * 监听通话状态/通话记录/联系人；弹窗模式还需要悬浮窗权限，否则会一直退化为通知。
+     */
+    private fun requestCallNotePermissionsIfNeeded() {
+        if (!SettingUtils.callNoteEnabled) return
+        val permissions = mutableListOf(
+            PermissionLists.getReadPhoneStatePermission(),
+            PermissionLists.getReadCallLogPermission(),
+            PermissionLists.getReadContactsPermission(),
+        )
+        if (SettingUtils.callNoteDisplayMode == CALL_NOTE_DISPLAY_POPUP) {
+            permissions.add(PermissionLists.getSystemAlertWindowPermission())
+        }
+        if (XXPermissions.isGrantedPermissions(this, permissions)) return
+        XXPermissions.with(this)
+            .permissions(permissions)
+            .request(object : OnPermissionCallback {
+                override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
+                    if (deniedList.isNotEmpty()) XToastUtils.error(getString(R.string.call_note) + ": " + getString(R.string.toast_denied))
+                }
+            })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -123,6 +148,8 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             .permission(PermissionLists.getPostNotificationsPermission())
             .request(object : OnPermissionCallback {
                 override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
+                    //通知权限弹窗结束后再申请通话备注所需权限（XXPermissions 不支持并发申请）
+                    requestCallNotePermissionsIfNeeded()
                     val allGranted = deniedList.isEmpty()
                     if (!allGranted) {
                         XToastUtils.error(R.string.tips_notification)

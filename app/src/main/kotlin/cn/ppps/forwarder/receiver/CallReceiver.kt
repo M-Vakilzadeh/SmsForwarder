@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import cn.ppps.forwarder.App.Companion.CALL_TYPE_MAP
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.entity.MsgInfo
+import cn.ppps.forwarder.utils.CallNotePopup
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
@@ -74,37 +75,45 @@ open class CallReceiver : PhoneStateReceiver() {
     //来电提醒
     override fun onIncomingCallReceived(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onIncomingCallReceived：$number")
-        sendNotice(context, 4, number)
+        //响铃时收起通话备注悬浮窗，避免挡住接听键
+        CallNotePopup.onCallStarted(context)
+        if (SettingUtils.enablePhone) sendNotice(context, 4, number)
     }
 
     //来电接通
     override fun onIncomingCallAnswered(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onIncomingCallAnswered：$number")
-        sendNotice(context, 5, number, ringSeconds = ((Date().time - start.time) / 1000).toInt().coerceAtLeast(0))
+        if (SettingUtils.enablePhone) sendNotice(context, 5, number, ringSeconds = ((Date().time - start.time) / 1000).toInt().coerceAtLeast(0))
     }
 
     //来电挂机
     override fun onIncomingCallEnded(context: Context, number: String?, start: Date, end: Date) {
         Log.d(TAG, "onIncomingCallEnded：$number")
-        sendCallMsg(context, 1, number, start, end)
+        CallNotePopup.onCallEnded(context, 1, number, start, end)
+        if (SettingUtils.enablePhone) sendCallMsg(context, 1, number, start, end)
     }
 
     //去电拨出
     override fun onOutgoingCallStarted(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onOutgoingCallStarted：$number")
-        sendNotice(context, 6, number)
+        CallNotePopup.onCallStarted(context)
+        if (SettingUtils.enablePhone) sendNotice(context, 6, number)
     }
 
     //去电挂机
     override fun onOutgoingCallEnded(context: Context, number: String?, start: Date, end: Date) {
         Log.d(TAG, "onOutgoingCallEnded：$number")
-        sendCallMsg(context, 2, number, start, end)
+        CallNotePopup.onCallEnded(context, 2, number, start, end)
+        if (SettingUtils.enablePhone) sendCallMsg(context, 2, number, start, end)
     }
 
     //未接来电
     override fun onMissedCall(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onMissedCall：$number")
-        sendCallMsg(context, 3, number, start, Date())
+        val end = Date()
+        //未接来电不弹备注，但要恢复响铃时收起的悬浮窗
+        CallNotePopup.onCallEnded(context, 3, number, start, end)
+        if (SettingUtils.enablePhone) sendCallMsg(context, 3, number, start, end)
     }
 
     //转发通话记录

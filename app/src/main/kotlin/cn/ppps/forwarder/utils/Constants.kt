@@ -122,6 +122,19 @@ const val SP_NET_ALERT_ENABLED = "net_alert_enabled"
 const val SP_NET_ALERT_URL = "net_alert_url"
 const val SP_NET_ALERT_INTERVAL = "net_alert_interval_minutes"
 
+//通话备注：每通电话结束后弹窗让用户写说明（可空），发往单独配置的 URL
+const val SP_CALL_NOTE_ENABLED = "call_note_enabled"
+const val SP_CALL_NOTE_URL = "call_note_url"
+//展示方式：0=直接弹窗（需要悬浮窗权限），1=通知栏提醒，点击后弹窗
+const val SP_CALL_NOTE_DISPLAY_MODE = "call_note_display_mode"
+//发送方式：0=写完立即发送，1=按周期批量发送
+const val SP_CALL_NOTE_SEND_MODE = "call_note_send_mode"
+const val SP_CALL_NOTE_BATCH_INTERVAL = "call_note_batch_interval_minutes"
+const val CALL_NOTE_DISPLAY_POPUP = 0
+const val CALL_NOTE_DISPLAY_NOTIFICATION = 1
+const val CALL_NOTE_SEND_REALTIME = 0
+const val CALL_NOTE_SEND_BATCH = 1
+
 const val SP_NOTIFY_CONTENT = "notify_content"
 const val SP_EXTRA_DEVICE_MARK = "extra_device_mark"
 const val SP_SUBID_SIM1 = "subid_sim1"

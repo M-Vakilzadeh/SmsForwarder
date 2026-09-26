@@ -83,6 +83,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 通话备注：通话结束后以悬浮窗弹出备注表单（App 未打开也能弹） -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- OpenKeychain：确保 API 30+ 上 OpenPGP 服务可见（即使未来移除 QUERY_ALL_PACKAGES 也不受影响） -->
     <queries>
@@ -232,6 +234,14 @@
             android:screenOrientation="portrait"
             android:theme="@style/DialogTheme"
             tools:ignore="DiscouragedApi" />
+        <!-- 通话备注表单（点击通知打开）：独立任务、不进最近任务，避免把主界面带到前台 -->
+        <activity
+            android:name=".activity.CallNoteActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity="cn.ppps.forwarder.callnote"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.NoActionBar"
+            android:windowSoftInputMode="adjustResize|stateVisible" />
         <!-- applink的中转页面 -->
         <activity
             android:name=".core.XPageTransferActivity"

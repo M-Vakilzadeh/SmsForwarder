@@ -23,6 +23,7 @@ import cn.ppps.forwarder.utils.TaskWorker
 import cn.ppps.forwarder.utils.task.TaskUtils
 import cn.ppps.forwarder.workers.NetworkWorker
 import cn.ppps.forwarder.workers.SweepWorker
+import cn.ppps.forwarder.workers.CallNoteWorker
 import java.util.concurrent.TimeUnit
 
 @Suppress("PrivatePropertyName", "DEPRECATION", "UNUSED_PARAMETER")
@@ -88,6 +89,7 @@ class NetworkChangeReceiver : BroadcastReceiver() {
         if (TaskUtils.networkState != 0) {
             Log.d(TAG, "Network Reconnected, trigger sweep")
             SweepWorker.enqueueOnce(context)
+            CallNoteWorker.onReconnect(context)
         }
 
         //【注意】延迟5秒（给够搜索信号时间）才执行任务

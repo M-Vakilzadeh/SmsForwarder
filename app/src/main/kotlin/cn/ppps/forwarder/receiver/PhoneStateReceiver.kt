@@ -16,8 +16,8 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
         //纯客户端模式
         if (SettingUtils.enablePureClientMode) return
 
-        //总开关
-        if (!SettingUtils.enablePhone) return
+        //总开关：通话转发与通话备注都关闭时才不处理（备注可独立于转发开启）
+        if (!SettingUtils.enablePhone && !SettingUtils.callNoteEnabled) return
 
         //We listen to two intents.  The new outgoing call only tells us of an outgoing call.  We use it to get the number.
         for (key in intent.extras!!.keySet()) {

@@ -18,6 +18,7 @@ import androidx.multidex.MultiDex
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import cn.ppps.forwarder.activity.AppLockActivity
+import cn.ppps.forwarder.activity.CallNoteActivity
 import cn.ppps.forwarder.activity.MainActivity
 import cn.ppps.forwarder.activity.SplashActivity
 import cn.ppps.forwarder.core.Core
@@ -37,6 +38,7 @@ import cn.ppps.forwarder.receiver.NetworkChangeReceiver
 import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.workers.HeartbeatWorker
 import cn.ppps.forwarder.workers.NetAlertWorker
+import cn.ppps.forwarder.workers.CallNoteWorker
 import cn.ppps.forwarder.workers.UpdateCheckWorker
 import cn.ppps.forwarder.workers.ReconcileWorker
 import cn.ppps.forwarder.workers.SweepWorker
@@ -174,6 +176,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
                 startedCount++
                 if (AppLockUtils.isLockSet() && !appUnlocked
                     && activity !is AppLockActivity && activity !is SplashActivity
+                    //通话备注表单只写备注、不涉及设置，不应让业务员每通电话都输一次密码
+                    && activity !is CallNoteActivity
                 ) {
                     activity.startActivity(Intent(activity, AppLockActivity::class.java))
                 }
@@ -313,6 +317,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             HeartbeatWorker.enqueuePeriodic(this)
             //网络状态告警：按用户设置定时检查网络并调用其 webhook（未开启会自动取消）
             NetAlertWorker.schedule(this)
+            //通话备注：批量模式安排周期发送；立即模式补发积压
+            CallNoteWorker.schedule(this)
             //每天检查一次 GitHub Releases 是否有新版本
             UpdateCheckWorker.enqueuePeriodic(this)
 

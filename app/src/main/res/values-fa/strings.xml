@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通话备注的波斯语文案（业务员手机多为波斯语系统）；其余文案回落到默认语言 -->
+<resources>
+    <string name="call_note">توضیحات تماس</string>
+    <string name="call_note_tips">بعد از هر تماس (ورودیِ پاسخ‌داده یا خروجی) پنجره‌ای باز می‌شود تا توضیحات تماس را (اختیاری) بنویسید و به آدرس زیر ارسال شود؛ مستقل از فوروارد تماس.</string>
+    <string name="call_note_url_label">آدرس ارسال</string>
+    <string name="call_note_url_prompt">آدرس دریافت توضیحات تماس را وارد کنید</string>
+    <string name="call_note_display_label">نحوه نمایش</string>
+    <string name="call_note_display_popup">پاپ‌آپ مستقیم</string>
+    <string name="call_note_display_notification">نوتیفیکیشن، با لمس پاپ‌آپ باز شود</string>
+    <string name="call_note_send_label">نحوه ارسال</string>
+    <string name="call_note_send_realtime">ارسال فوری</string>
+    <string name="call_note_send_batch">ارسال دسته‌ای زمان‌بندی‌شده</string>
+    <string name="call_note_batch_interval_label">فاصله ارسال دسته‌ای</string>
+    <string name="call_note_overlay_permission">مجوز نمایش روی برنامه‌ها</string>
+    <string name="call_note_overlay_granted">داده شده</string>
+    <string name="call_note_overlay_missing">داده نشده (از نوتیفیکیشن استفاده می‌شود)</string>
+    <string name="call_note_title">توضیحات تماس</string>
+    <string name="call_note_hint">توضیحات این تماس (اختیاری)</string>
+    <string name="call_note_send">ارسال</string>
+    <string name="call_note_later">بعداً</string>
+    <string name="call_note_skip">رد کردن</string>
+    <string name="call_note_saved">توضیحات تماس ذخیره شد</string>
+    <string name="call_note_save_failed">ذخیره توضیحات تماس ناموفق بود</string>
+    <string name="call_note_channel_name">توضیحات تماس</string>
+    <string name="call_note_incoming">تماس ورودی</string>
+    <string name="call_note_outgoing">تماس خروجی</string>
+</resources>

@@ -46,6 +46,12 @@ import cn.ppps.forwarder.utils.EVENT_TOAST_ERROR
 import cn.ppps.forwarder.utils.EVENT_TOAST_SUCCESS
 import cn.ppps.forwarder.utils.ProvisionUtils
 import cn.ppps.forwarder.workers.NetAlertWorker
+import cn.ppps.forwarder.workers.CallNoteWorker
+import cn.ppps.forwarder.utils.CallNotePopup
+import cn.ppps.forwarder.utils.CALL_NOTE_DISPLAY_NOTIFICATION
+import cn.ppps.forwarder.utils.CALL_NOTE_DISPLAY_POPUP
+import cn.ppps.forwarder.utils.CALL_NOTE_SEND_BATCH
+import cn.ppps.forwarder.utils.CALL_NOTE_SEND_REALTIME
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_REALTIME
 import cn.ppps.forwarder.workers.DailyForwardWorker
@@ -184,6 +190,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         setupDailyForward()
         //网络状态告警
         setupNetAlert()
+        setupCallNote()
         //免打扰(禁用转发)时间段
         binding!!.tvSilentPeriod.text = mTimeOption[SettingUtils.silentPeriodStart] + " ~ " + mTimeOption[SettingUtils.silentPeriodEnd]
         binding!!.scbSilentPeriodLogs.isChecked = SettingUtils.enableSilentPeriodLogs
@@ -240,6 +247,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         super.onResume()
         //初始化APP下拉列表
         initAppSpinner()
+        //从系统设置页授权悬浮窗回来后刷新状态
+        if (binding != null) refreshCallNoteOverlay()
     }
 
     override fun initListeners() {
@@ -252,6 +261,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.btnNetAlertUrl.setOnClickListener(this)
         binding!!.btnNetAlertTest.setOnClickListener(this)
         binding!!.btnNetAlertInterval.setOnClickListener(this)
+        binding!!.btnCallNoteUrl.setOnClickListener(this)
+        binding!!.btnCallNoteTest.setOnClickListener(this)
+        binding!!.btnCallNoteDisplay.setOnClickListener(this)
+        binding!!.btnCallNoteOverlay.setOnClickListener(this)
+        binding!!.btnCallNoteSendMode.setOnClickListener(this)
+        binding!!.btnCallNoteBatchInterval.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
         binding!!.btnExtraSim2.setOnClickListener(this)
@@ -385,6 +400,82 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     NetAlertWorker.schedule(requireContext())
                     return@OnOptionsSelectListener false
                 }).setTitleText(getString(R.string.net_alert_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
+                    it.setPicker(labels)
+                    it.show()
+                }
+            }
+
+            R.id.btn_call_note_url -> {
+                MaterialDialog.Builder(requireContext())
+                    .title(R.string.call_note_url_label)
+                    .content(R.string.call_note_url_prompt)
+                    .inputType(InputType.TYPE_TEXT_VARIATION_URI)
+                    .input(getString(R.string.call_note_url_prompt), SettingUtils.callNoteUrl, true) { _: MaterialDialog?, input: CharSequence? ->
+                        val url = input?.toString()?.trim() ?: ""
+                        SettingUtils.callNoteUrl = url
+                        binding!!.tvCallNoteUrl.text = url
+                        CallNoteWorker.schedule(requireContext())
+                    }
+                    .positiveText(R.string.confirm)
+                    .negativeText(R.string.cancel)
+                    .show()
+            }
+
+            R.id.btn_call_note_test -> {
+                val url = SettingUtils.callNoteUrl.trim()
+                if (url.isEmpty()) {
+                    XToastUtils.error(getString(R.string.call_note_url_prompt))
+                    return
+                }
+                XToastUtils.toast(getString(R.string.testing))
+                Thread {
+                    val result = CallNoteWorker.sendTest(url)
+                    if (result.first) {
+                        LiveEventBus.get(EVENT_TOAST_SUCCESS, String::class.java).post(getString(R.string.test_ok) + " " + result.second)
+                    } else {
+                        LiveEventBus.get(EVENT_TOAST_ERROR, String::class.java).post(getString(R.string.test_failed) + " " + result.second)
+                    }
+                }.start()
+            }
+
+            R.id.btn_call_note_display -> {
+                val options = listOf(CALL_NOTE_DISPLAY_POPUP, CALL_NOTE_DISPLAY_NOTIFICATION)
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    SettingUtils.callNoteDisplayMode = options[options1]
+                    refreshCallNoteViews()
+                    if (options[options1] == CALL_NOTE_DISPLAY_POPUP) requestOverlayPermission()
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.call_note_display_label)).setSelectOptions(options.indexOf(SettingUtils.callNoteDisplayMode).coerceAtLeast(0)).build<Any>().also {
+                    it.setPicker(options.map { m -> callNoteDisplayLabel(m) })
+                    it.show()
+                }
+            }
+
+            R.id.btn_call_note_overlay -> requestOverlayPermission()
+
+            R.id.btn_call_note_send_mode -> {
+                val options = listOf(CALL_NOTE_SEND_REALTIME, CALL_NOTE_SEND_BATCH)
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    SettingUtils.callNoteSendMode = options[options1]
+                    refreshCallNoteViews()
+                    CallNoteWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.call_note_send_label)).setSelectOptions(options.indexOf(SettingUtils.callNoteSendMode).coerceAtLeast(0)).build<Any>().also {
+                    it.setPicker(options.map { m -> callNoteSendLabel(m) })
+                    it.show()
+                }
+            }
+
+            R.id.btn_call_note_batch_interval -> {
+                val labels = netAlertIntervalOptions.map { intervalLabelMinutes(it) }
+                val currentIdx = netAlertIntervalOptions.indexOf(SettingUtils.callNoteBatchInterval).let { if (it < 0) 2 else it }
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    val chosen = netAlertIntervalOptions[options1]
+                    SettingUtils.callNoteBatchInterval = chosen
+                    binding!!.tvCallNoteBatchInterval.text = intervalLabelMinutes(chosen)
+                    CallNoteWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.call_note_batch_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
                     it.setPicker(labels)
                     it.show()
                 }
@@ -580,6 +671,78 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
             binding!!.layoutNetAlertDetail.visibility = if (isChecked) View.VISIBLE else View.GONE
             NetAlertWorker.schedule(requireContext())
         }
+    }
+
+    //通话备注：开关 + 地址 + 展示方式（弹窗/通知）+ 悬浮窗权限 + 发送方式（立即/批量）+ 批量周期
+    private fun setupCallNote() {
+        refreshCallNoteViews()
+        val enabled = SettingUtils.callNoteEnabled
+        binding!!.sbCallNote.isChecked = enabled
+        binding!!.layoutCallNoteDetail.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding!!.sbCallNote.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
+            SettingUtils.callNoteEnabled = isChecked
+            binding!!.layoutCallNoteDetail.visibility = if (isChecked) View.VISIBLE else View.GONE
+            CallNoteWorker.schedule(requireContext())
+            if (isChecked) requestCallNotePermissions()
+        }
+    }
+
+    private fun refreshCallNoteViews() {
+        binding!!.tvCallNoteUrl.text = SettingUtils.callNoteUrl
+        binding!!.tvCallNoteDisplay.text = callNoteDisplayLabel(SettingUtils.callNoteDisplayMode)
+        binding!!.tvCallNoteSendMode.text = callNoteSendLabel(SettingUtils.callNoteSendMode)
+        binding!!.tvCallNoteBatchInterval.text = intervalLabelMinutes(SettingUtils.callNoteBatchInterval)
+        binding!!.layoutCallNoteBatchIntervalRow.visibility = if (SettingUtils.callNoteSendMode == CALL_NOTE_SEND_BATCH) View.VISIBLE else View.GONE
+        refreshCallNoteOverlay()
+    }
+
+    private fun refreshCallNoteOverlay() {
+        binding!!.tvCallNoteOverlay.text = getString(
+            if (CallNotePopup.canDrawOverlays(requireContext())) R.string.call_note_overlay_granted else R.string.call_note_overlay_missing
+        )
+    }
+
+    private fun callNoteDisplayLabel(mode: Int): String = getString(
+        if (mode == CALL_NOTE_DISPLAY_NOTIFICATION) R.string.call_note_display_notification else R.string.call_note_display_popup
+    )
+
+    private fun callNoteSendLabel(mode: Int): String = getString(
+        if (mode == CALL_NOTE_SEND_BATCH) R.string.call_note_send_batch else R.string.call_note_send_realtime
+    )
+
+    //通话备注需要监听通话状态（号码/联系人用于表单展示）；弹窗模式还需要悬浮窗权限
+    private fun requestCallNotePermissions() {
+        XXPermissions.with(this)
+            .permission(PermissionLists.getReadPhoneStatePermission())
+            .permission(PermissionLists.getReadCallLogPermission())
+            .permission(PermissionLists.getReadContactsPermission())
+            //通知模式与弹窗兜底都依赖通知（Android 13+ 需运行时授权）
+            .permission(PermissionLists.getPostNotificationsPermission())
+            .request(object : OnPermissionCallback {
+                override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
+                    if (deniedList.isNotEmpty()) {
+                        XToastUtils.error(getString(R.string.call_note) + ": " + getString(R.string.toast_denied))
+                        if (XXPermissions.isDoNotAskAgainPermissions(requireActivity(), deniedList)) {
+                            XXPermissions.startPermissionActivity(requireContext(), deniedList)
+                        }
+                    }
+                    if (SettingUtils.callNoteDisplayMode == CALL_NOTE_DISPLAY_POPUP) requestOverlayPermission()
+                }
+            })
+    }
+
+    private fun requestOverlayPermission() {
+        if (CallNotePopup.canDrawOverlays(requireContext())) {
+            refreshCallNoteOverlay()
+            return
+        }
+        XXPermissions.with(this)
+            .permission(PermissionLists.getSystemAlertWindowPermission())
+            .request(object : OnPermissionCallback {
+                override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
+                    if (binding != null) refreshCallNoteOverlay()
+                }
+            })
     }
 
     //在线下载配置并导入，成功后重启到主界面（与「一键换新机」导入一致）

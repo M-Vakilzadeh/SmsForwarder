@@ -133,6 +133,13 @@ class SettingUtils private constructor() {
         var netAlertUrl: String by SharedPreference(SP_NET_ALERT_URL, "")
         var netAlertInterval: Int by SharedPreference(SP_NET_ALERT_INTERVAL, 60)
 
+        //通话备注：开关 / 地址 / 展示方式 / 发送方式 / 批量周期（分钟，默认 60）
+        var callNoteEnabled: Boolean by SharedPreference(SP_CALL_NOTE_ENABLED, false)
+        var callNoteUrl: String by SharedPreference(SP_CALL_NOTE_URL, "")
+        var callNoteDisplayMode: Int by SharedPreference(SP_CALL_NOTE_DISPLAY_MODE, CALL_NOTE_DISPLAY_POPUP)
+        var callNoteSendMode: Int by SharedPreference(SP_CALL_NOTE_SEND_MODE, CALL_NOTE_SEND_REALTIME)
+        var callNoteBatchInterval: Int by SharedPreference(SP_CALL_NOTE_BATCH_INTERVAL, 60)
+
         //通知内容
         var notifyContent: String by SharedPreference(SP_NOTIFY_CONTENT, getString(R.string.notification_content))
 

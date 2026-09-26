@@ -105,6 +105,7 @@ class SendWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     it.callDuration = msgInfo.callDuration
                     it.callDateLong = msgInfo.callDateLong
                     it.callLogMissing = msgInfo.callLogMissing
+                    it.ringSeconds = msgInfo.ringSeconds
                 }
                 val msgId = Core.msg.insert(msg)
                 for (rule in ruleListMatched) {

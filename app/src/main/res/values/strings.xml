@@ -14,6 +14,7 @@
     <string name="tag_call_type" translatable="false">{{CALL_TYPE}}</string>
     <string name="tag_call_log_missing" translatable="false">{{CALL_LOG_MISSING}}</string>
     <string name="tag_call_duration" translatable="false">{{CALL_DURATION}}</string>
+    <string name="tag_ring_seconds" translatable="false">{{RING_SECONDS}}</string>
     <string name="tag_call_type_code" translatable="false">{{CALL_TYPE_CODE}}</string>
     <string name="tag_call_date" translatable="false">{{CALL_DATE}}</string>
     <string name="tag_location" translatable="false">{{LOCATION}}</string>
@@ -48,6 +49,11 @@
     <string name="insert_tag_app_version">SmsF版本</string>
     <string name="insert_tag_call_type">通话类型</string>
     <string name="insert_tag_call_duration">通话时长</string>
+    <string name="insert_tag_ring_seconds">等待接听秒数</string>
+    <string name="ring_wait_label">等待接听：</string>
+    <string name="update_channel_name">版本更新</string>
+    <string name="update_available_title">发现新版本</string>
+    <string name="update_available_text">最新版本 %1$s，点击打开应用下载并安装</string>
     <string name="insert_tag_call_type_code">通话类型码</string>
     <string name="insert_tag_call_date">通话时间</string>
     <string name="insert_tag_location">定位信息</string>
@@ -932,7 +938,7 @@
     <string name="silent_time_period_tips">结束时间小于开始则跨天；相等则禁用</string>
     <string name="silent_time_period_logs">记录日志</string>
     <string name="daily_forward_mode">每日汇总转发</string>
-    <string name="daily_forward_tips">开启后不再实时转发，改为每天定时统一读取通话/短信记录批量转发（断网时到点会先入队，联网后自动补发）</string>
+    <string name="daily_forward_tips">开启后通话/短信记录只会在下方设置的时间统一批量转发，通话结束后不会立即转发（断网时到点会先入队，联网后自动补发）</string>
     <string name="daily_forward_time_label">每日转发时间</string>
     <string name="daily_forward_include_call">包含通话</string>
     <string name="daily_forward_include_sms">包含短信</string>

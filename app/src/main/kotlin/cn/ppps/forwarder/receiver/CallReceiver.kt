@@ -30,7 +30,8 @@ open class CallReceiver : PhoneStateReceiver() {
 
         //转发通话提醒
         //callLogMissing：通话记录在超时时间内始终没有落库，此条记录没有真实通话时长
-        fun sendNotice(context: Context, callType: Int, phoneNumber: String?, callLogMissing: Boolean = false) {
+        //ringSeconds：等待接听秒数（拿不到通话记录时由调用方用已知信息给出）
+        fun sendNotice(context: Context, callType: Int, phoneNumber: String?, callLogMissing: Boolean = false, ringSeconds: Int = 0) {
             if (TextUtils.isEmpty(phoneNumber)) return
 
             //每日汇总模式下不实时转发通话，改由 DailyForwardWorker 到点统一读通话记录转发
@@ -55,6 +56,7 @@ open class CallReceiver : PhoneStateReceiver() {
 
             val msgInfo = MsgInfo("call", phoneNumber.toString(), msg.toString(), Date(), "", -1, 0, callType)
             msgInfo.callLogMissing = callLogMissing
+            msgInfo.ringSeconds = ringSeconds
             enqueueSend(context, msgInfo)
         }
 
@@ -78,13 +80,13 @@ open class CallReceiver : PhoneStateReceiver() {
     //来电接通
     override fun onIncomingCallAnswered(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onIncomingCallAnswered：$number")
-        sendNotice(context, 5, number)
+        sendNotice(context, 5, number, ringSeconds = ((Date().time - start.time) / 1000).toInt().coerceAtLeast(0))
     }
 
     //来电挂机
     override fun onIncomingCallEnded(context: Context, number: String?, start: Date, end: Date) {
         Log.d(TAG, "onIncomingCallEnded：$number")
-        sendCallMsg(context, 1, number, start)
+        sendCallMsg(context, 1, number, start, end)
     }
 
     //去电拨出
@@ -96,19 +98,20 @@ open class CallReceiver : PhoneStateReceiver() {
     //去电挂机
     override fun onOutgoingCallEnded(context: Context, number: String?, start: Date, end: Date) {
         Log.d(TAG, "onOutgoingCallEnded：$number")
-        sendCallMsg(context, 2, number, start)
+        sendCallMsg(context, 2, number, start, end)
     }
 
     //未接来电
     override fun onMissedCall(context: Context, number: String?, start: Date) {
         Log.d(TAG, "onMissedCall：$number")
-        sendCallMsg(context, 3, number, start)
+        sendCallMsg(context, 3, number, start, Date())
     }
 
     //转发通话记录
     //拨号器是异步写入通话记录的，这里不再在主线程 sleep 等待，改为交给 CallLogWorker 轮询，
     //并且只接受时间戳不早于本次通话开始时间的记录，避免匹配到同一号码更早的那一通电话。
-    private fun sendCallMsg(context: Context, callType: Int, phoneNumber: String?, start: Date) {
+    //等待接听时长：来电有接听时刻，精确 = 接听 − 响铃开始；去电/未接广播里没有接听时刻，交给 CallLogWorker 用「总时长 − 通话时长」推算
+    private fun sendCallMsg(context: Context, callType: Int, phoneNumber: String?, start: Date, end: Date) {
         //每日汇总模式下不实时转发通话记录，改由 DailyForwardWorker 到点统一处理
         if (SettingUtils.forwardTiming == FORWARD_TIMING_DAILY && SettingUtils.dailyIncludeCall) {
             Log.d(TAG, "每日汇总模式，跳过实时通话转发，callType=$callType")
@@ -116,11 +119,16 @@ open class CallReceiver : PhoneStateReceiver() {
         }
         Log.d(TAG, "callType = $callType, phoneNumber = $phoneNumber, callStart = $start")
 
+        val answered = if (callType == 1) PhoneStateReceiver.answerTime else null
+        val ringMillis = if (answered != null) maxOf(0L, answered.time - start.time) else -1L
+
         val request = OneTimeWorkRequestBuilder<CallLogWorker>().setInputData(
             workDataOf(
                 Worker.CALL_TYPE to callType,
                 Worker.PHONE_NUMBER to phoneNumber,
-                Worker.CALL_START_MILLIS to start.time
+                Worker.CALL_START_MILLIS to start.time,
+                Worker.CALL_END_MILLIS to end.time,
+                Worker.CALL_RING_MILLIS to ringMillis
             )
         ).build()
         WorkManager.getInstance(context).enqueue(request)

@@ -12,6 +12,7 @@ class SettingUtils private constructor() {
 
         //是否加入SmsF预览体验计划
         var joinPreviewProgram: Boolean by SharedPreference(JOIN_PREVIEW_PROGRAM, false)
+        var lastNotifiedUpdateTag: String by SharedPreference(LAST_NOTIFIED_UPDATE_TAG, "")
 
         //是否同意隐私政策
         var isAgreePrivacy: Boolean by SharedPreference(IS_AGREE_PRIVACY_KEY, false)

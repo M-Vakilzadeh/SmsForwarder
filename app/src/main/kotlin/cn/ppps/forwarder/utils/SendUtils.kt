@@ -60,6 +60,7 @@ object SendUtils {
         msgInfo.callDuration = item.msg.callDuration
         msgInfo.callDateLong = item.msg.callDateLong
         msgInfo.callLogMissing = item.msg.callLogMissing
+        msgInfo.ringSeconds = item.msg.ringSeconds
         Log.d(TAG, "msgInfo = $msgInfo")
 
         val request = OneTimeWorkRequestBuilder<SendWorker>().setInputData(
@@ -78,6 +79,7 @@ object SendUtils {
         msgInfo.callDuration = item.msg.callDuration
         msgInfo.callDateLong = item.msg.callDateLong
         msgInfo.callLogMissing = item.msg.callLogMissing
+        msgInfo.ringSeconds = item.msg.ringSeconds
         Log.d(TAG, "msgInfo = $msgInfo")
 
         var senderIndex = 0

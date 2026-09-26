@@ -14,6 +14,11 @@
     <string name="insert_tag_app_version">SmsF Version</string>
     <string name="insert_tag_call_type">Call Type</string>
     <string name="insert_tag_call_duration">Call Duration</string>
+    <string name="insert_tag_ring_seconds">Ring Wait Seconds</string>
+    <string name="ring_wait_label">Ring wait: </string>
+    <string name="update_channel_name">App updates</string>
+    <string name="update_available_title">New version available</string>
+    <string name="update_available_text">Latest version %1$s — tap to open the app and install it</string>
     <string name="insert_tag_call_type_code">Call Type Code</string>
     <string name="insert_tag_call_date">Call Time</string>
     <string name="insert_tag_location">Location</string>
@@ -897,7 +902,7 @@
     <string name="silent_time_period_tips">If the end time is less than the start time, it will span days; if it is equal, it will be disabled</string>
     <string name="silent_time_period_logs">Save Logs</string>
     <string name="daily_forward_mode">Daily Batch Forwarding</string>
-    <string name="daily_forward_tips">When on, calls/SMS are not forwarded in real time; instead they are read from the call/SMS logs and forwarded together at a set time each day (queued if offline, sent automatically once network returns)</string>
+    <string name="daily_forward_tips">When on, call/SMS logs are only forwarded together at the time set below, not right after each call or message (queued if offline, sent automatically once network returns)</string>
     <string name="daily_forward_time_label">Daily Forward Time</string>
     <string name="daily_forward_include_call">Include Calls</string>
     <string name="daily_forward_include_sms">Include SMS</string>

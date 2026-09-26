@@ -11,6 +11,10 @@ object Worker {
     const val CALL_TYPE = "call_type"
     const val PHONE_NUMBER = "phone_number"
     const val CALL_START_MILLIS = "call_start_millis"
+    const val CALL_END_MILLIS = "call_end_millis"
+
+    //来电已知的精确等待毫秒数（响铃到接听），-1 表示未知，由 Worker 用「总时长 − 通话时长」推算
+    const val CALL_RING_MILLIS = "call_ring_millis"
 
     //WebhookDeliveryWorker：持久化投递
     const val WEBHOOK_SETTING = "webhook_setting"
@@ -245,8 +249,12 @@ const val EVENT_KEY_SIM_SLOT = "EVENT_KEY_SIM_SLOT"
 const val EVENT_KEY_PHONE_NUMBERS = "EVENT_KEY_PHONE_NUMBERS"
 
 //在线升级&预览计划URL
-const val KEY_UPDATE_URL = "https://xupdate.ppps.cn/update/checkVersion"
-const val KEY_PREVIEW_URL = "https://xupdate.ppps.cn/preview/checkVersion"
+//版本来源改为自己仓库的 GitHub Releases（预览计划没有单独通道，与正式版相同）
+const val KEY_UPDATE_URL = "https://api.github.com/repos/M-Vakilzadeh/SmsForwarder/releases/latest"
+const val KEY_PREVIEW_URL = KEY_UPDATE_URL
+
+//UpdateCheckWorker：上次已提示过的版本 tag，同一版本只提示一次
+const val LAST_NOTIFIED_UPDATE_TAG = "last_notified_update_tag"
 
 //HttpServer相关
 const val HTTP_SERVER_PORT = 5000

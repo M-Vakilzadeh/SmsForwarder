@@ -91,6 +91,7 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
             TelephonyManager.CALL_STATE_RINGING -> {
                 isIncoming = true
                 callStartTime = Date()
+                answerTime = null
 
                 onIncomingCallReceived(context, savedNumber, callStartTime)
             }
@@ -100,10 +101,13 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
                 if (previousState != TelephonyManager.CALL_STATE_RINGING) {
                     isIncoming = false
                     callStartTime = Date()
+                    answerTime = null
 
                     onOutgoingCallStarted(context, savedNumber, callStartTime)
                 } else {
                     isIncoming = true
+                    //记录接听时刻：来电的等待接听时长 = 接听时刻 − 开始响铃时刻
+                    answerTime = Date()
                     //这里不重置 callStartTime：通话记录里的 date 是「开始响铃」的时刻，
                     //若改成「接通」时刻，响铃较久的来电会匹配不到自己的那条通话记录。
                     onIncomingCallAnswered(context, savedNumber, callStartTime)
@@ -134,5 +138,9 @@ abstract class PhoneStateReceiver : BroadcastReceiver() {
         private var callStartTime: Date = Date()
         private var isIncoming: Boolean = false
         private var savedNumber: String? = null  //because the passed incoming is only valid in ringing
+
+        //来电被接听的时刻；去电无法通过广播得知对方何时接听，所以恒为 null
+        var answerTime: Date? = null
+            private set
     }
 }

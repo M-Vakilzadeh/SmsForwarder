@@ -37,6 +37,7 @@ import cn.ppps.forwarder.receiver.NetworkChangeReceiver
 import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.workers.HeartbeatWorker
 import cn.ppps.forwarder.workers.NetAlertWorker
+import cn.ppps.forwarder.workers.UpdateCheckWorker
 import cn.ppps.forwarder.workers.ReconcileWorker
 import cn.ppps.forwarder.workers.SweepWorker
 import cn.ppps.forwarder.service.BluetoothScanService
@@ -312,6 +313,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             HeartbeatWorker.enqueuePeriodic(this)
             //网络状态告警：按用户设置定时检查网络并调用其 webhook（未开启会自动取消）
             NetAlertWorker.schedule(this)
+            //每天检查一次 GitHub Releases 是否有新版本
+            UpdateCheckWorker.enqueuePeriodic(this)
 
             //监听锁屏&解锁
             val lockScreenReceiver = LockScreenReceiver()
@@ -489,6 +492,7 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
                 getString(R.string.tag_card_subid) to getString(R.string.insert_tag_card_subid),
                 getString(R.string.tag_call_type) to getString(R.string.insert_tag_call_type),
                 getString(R.string.tag_call_duration) to getString(R.string.insert_tag_call_duration),
+                getString(R.string.tag_ring_seconds) to getString(R.string.insert_tag_ring_seconds),
                 getString(R.string.tag_call_type_code) to getString(R.string.insert_tag_call_type_code),
                 getString(R.string.tag_call_date) to getString(R.string.insert_tag_call_date),
                 getString(R.string.tag_contact_name) to getString(R.string.insert_tag_contact_name),

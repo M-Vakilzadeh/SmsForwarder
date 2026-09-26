@@ -8,6 +8,7 @@ import cn.ppps.forwarder.utils.KEY_PREVIEW_URL
 import cn.ppps.forwarder.utils.KEY_UPDATE_URL
 import cn.ppps.forwarder.utils.update.CustomUpdateDownloader
 import cn.ppps.forwarder.utils.update.CustomUpdateFailureListener
+import cn.ppps.forwarder.utils.update.CustomUpdateParser
 import cn.ppps.forwarder.utils.update.XHttpUpdateHttpServiceImpl
 import com.xuexiang.xupdate.XUpdate
 import com.xuexiang.xupdate.utils.UpdateUtils
@@ -45,6 +46,8 @@ class XUpdateInit private constructor() {
                 .param("gitCommitId", BuildConfig.GIT_COMMIT_ID)
                 //这个必须设置！实现网络请求功能。
                 .setIUpdateHttpService(XHttpUpdateHttpServiceImpl())
+                //版本信息来自 GitHub Releases，用自定义解析器转成 XUpdate 的更新信息
+                .setIUpdateParser(CustomUpdateParser())
                 .setIUpdateDownLoader(CustomUpdateDownloader())
                 //这个必须初始化
                 .init(application)

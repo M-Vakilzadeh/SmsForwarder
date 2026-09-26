@@ -42,7 +42,7 @@ class UpdateTipDialog : AppCompatActivity(), DialogInterface.OnDismissListener {
         const val DOWNLOAD_TYPE_NAME = "GitHub"
 
         // 填写你应用下载页面的链接
-        private const val DOWNLOAD_URL = "https://github.com/pppscn/SmsForwarder/releases"
+        private const val DOWNLOAD_URL = GithubRelease.RELEASES_PAGE
 
         /**
          * 显示版本更新重试提示弹窗

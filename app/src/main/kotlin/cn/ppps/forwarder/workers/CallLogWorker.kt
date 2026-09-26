@@ -7,6 +7,7 @@ import cn.ppps.forwarder.R
 import cn.ppps.forwarder.entity.CallInfo
 import cn.ppps.forwarder.entity.MsgInfo
 import cn.ppps.forwarder.receiver.CallReceiver
+import cn.ppps.forwarder.utils.CallTiming
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
 import cn.ppps.forwarder.utils.SettingUtils
@@ -46,7 +47,11 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             val callType = inputData.getInt(Worker.CALL_TYPE, 0)
             val phoneNumber = inputData.getString(Worker.PHONE_NUMBER)
             val callStartMillis = inputData.getLong(Worker.CALL_START_MILLIS, 0L)
-            Log.d(TAG, "callType = $callType, phoneNumber = $phoneNumber, callStartMillis = $callStartMillis")
+            val callEndMillis = inputData.getLong(Worker.CALL_END_MILLIS, 0L)
+            val knownRingMillis = inputData.getLong(Worker.CALL_RING_MILLIS, -1L)
+            //本次通话从开始（响铃/拨出）到挂断的总秒数
+            val totalSeconds = CallTiming.totalSeconds(callStartMillis, callEndMillis)
+            Log.d(TAG, "callType = $callType, phoneNumber = $phoneNumber, callStartMillis = $callStartMillis, totalSeconds = $totalSeconds")
 
             val deadline = System.currentTimeMillis() + POLL_TIMEOUT_MILLIS
             var callInfo: CallInfo? = findCallInfo(callType, phoneNumber, callStartMillis)
@@ -58,7 +63,13 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             if (callInfo == null) {
                 //宁可发一条没有时长的记录，也不能把这次通话整个丢掉
                 Log.w(TAG, "等待 ${POLL_TIMEOUT_MILLIS}ms 仍查不到通话记录，降级为无时长通知，callType=$callType, phoneNumber=$phoneNumber")
-                CallReceiver.sendNotice(applicationContext, callType, phoneNumber, callLogMissing = true)
+                //没有通话记录就没有通话时长：只有来电（精确接听时刻）和未接（全程都在等）能确定等待时长
+                val fallbackRing = when {
+                    knownRingMillis >= 0 -> (knownRingMillis / 1000).toInt()
+                    callType == 3 -> totalSeconds
+                    else -> 0
+                }
+                CallReceiver.sendNotice(applicationContext, callType, phoneNumber, callLogMissing = true, ringSeconds = fallbackRing)
                 return@withContext Result.success()
             }
 
@@ -92,6 +103,8 @@ class CallLogWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             //结构化字段（T5）：不本地化，服务端可稳定解析
             msgInfo.callDuration = callInfo.duration
             msgInfo.callDateLong = callInfo.dateLong
+            //等待接听秒数：来电用精确值；去电/未接用「总时长 − 通话时长」（未接通时通话时长为 0，即整段都在等）
+            msgInfo.ringSeconds = CallTiming.ringSeconds(knownRingMillis, totalSeconds, callInfo.duration)
             CallReceiver.enqueueSend(applicationContext, msgInfo)
 
         } catch (e: Exception) {

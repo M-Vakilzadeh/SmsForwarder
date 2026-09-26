@@ -28,7 +28,7 @@ import cn.ppps.forwarder.utils.TAG_LIST
 @Database(
     entities = [Frpc::class, Msg::class, Logs::class, Rule::class, Sender::class, Task::class],
     views = [LogsDetail::class],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 @TypeConverters(ConvertersDate::class)
@@ -113,6 +113,7 @@ custom_domains = smsf.demo.com
                     MIGRATION_19_20,
                     MIGRATION_20_21,
                     MIGRATION_21_22,
+                    MIGRATION_22_23,
                 )
 
             /*if (BuildConfig.DEBUG) {
@@ -475,6 +476,13 @@ CREATE TABLE "Task" (
                 database.execSQL("Alter table Msg add column call_duration INTEGER NOT NULL DEFAULT 0 ")
                 database.execSQL("Alter table Msg add column call_date_long INTEGER NOT NULL DEFAULT 0 ")
                 database.execSQL("Alter table Msg add column call_log_missing INTEGER NOT NULL DEFAULT 0 ")
+            }
+        }
+
+        //Msg 增加等待接听秒数
+        private val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("Alter table Msg add column ring_seconds INTEGER NOT NULL DEFAULT 0 ")
             }
         }
 

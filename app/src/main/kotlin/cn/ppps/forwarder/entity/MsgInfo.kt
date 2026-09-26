@@ -7,6 +7,7 @@ import cn.ppps.forwarder.App.Companion.CALL_TYPE_MAP
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.utils.AppUtils
 import cn.ppps.forwarder.utils.BatteryUtils
+import cn.ppps.forwarder.utils.CallTiming
 import cn.ppps.forwarder.utils.HttpServerUtils
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
@@ -40,6 +41,8 @@ data class MsgInfo(
     var callDuration: Int = 0,
     //通话发生时间（运营商记录里的 date，毫秒），非转发时间 —— 对应不本地化的 {{CALL_DATE}}
     var callDateLong: Long = 0L,
+    //等待接听秒数（响铃/拨号等待，不含通话时长），无则 0 —— 对应不本地化的 {{RING_SECONDS}}
+    var ringSeconds: Int = 0,
 ) : Serializable {
 
     val titleForSend = getTitleForSend()
@@ -61,6 +64,9 @@ data class MsgInfo(
                     "app" -> "UID：${getString(R.string.tag_uid)}\n"
                     else -> ""
                 } +
+                //通话：默认模板里带上等待接听的秒数
+                (if (type == "call" && CallTiming.showRingWait(callType, ringSeconds))
+                    getString(R.string.ring_wait_label) + getString(R.string.tag_ring_seconds) + "s\n" else "") +
                 getString(R.string.tag_receive_time) + "\n" +
                 getString(R.string.tag_device_name)
 
@@ -114,6 +120,7 @@ data class MsgInfo(
             //以下均不做本地化：服务端需要稳定可解析的值
             .replaceTag(getString(R.string.tag_call_log_missing), callLogMissing.toString(), encoderName)
             .replaceTag(getString(R.string.tag_call_duration), callDuration.toString(), encoderName)
+            .replaceTag(getString(R.string.tag_ring_seconds), ringSeconds.toString(), encoderName)
             .replaceTag(getString(R.string.tag_call_type_code), callType.toString(), encoderName)
             .replaceTag(
                 getString(R.string.tag_call_date),

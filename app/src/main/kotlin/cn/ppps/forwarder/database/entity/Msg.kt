@@ -33,7 +33,8 @@ data class Msg(
     @ColumnInfo(name = "call_duration", defaultValue = "0") var callDuration: Int = 0,
     @ColumnInfo(name = "call_date_long", defaultValue = "0") var callDateLong: Long = 0L,
     @ColumnInfo(name = "call_log_missing", defaultValue = "0") var callLogMissing: Boolean = false,
-) : Parcelable {
+    @ColumnInfo(name = "ring_seconds", defaultValue = "0") var ringSeconds: Int = 0,
+): Parcelable {
 
     val simImageId: Int
         get() {

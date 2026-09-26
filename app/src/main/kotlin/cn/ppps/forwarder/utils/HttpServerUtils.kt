@@ -6,6 +6,7 @@ import android.util.Base64
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.core.Core
 import cn.ppps.forwarder.workers.DailyForwardWorker
+import cn.ppps.forwarder.workers.NetAlertWorker
 import cn.ppps.forwarder.entity.CloneInfo
 import cn.ppps.forwarder.entity.LocationInfo
 import cn.ppps.forwarder.server.model.BaseRequest
@@ -224,6 +225,8 @@ class HttpServerUtils private constructor() {
                 //导入的设置里含「转发时机/周期」，进程通常不重启(App.onCreate 不会重跑)，
                 //这里按导入后的设置重排定时汇总任务，使其立即生效
                 DailyForwardWorker.schedule(Core.app)
+                //网络告警同理：按导入后的开关/地址/周期重排（未开启会自动取消）
+                NetAlertWorker.schedule(Core.app)
                 true
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -1,5 +1,7 @@
 package cn.ppps.forwarder.utils
 
+import com.google.gson.Gson
+import com.google.gson.JsonParser
 import java.util.UUID
 
 /**
@@ -19,4 +21,29 @@ object CallIdentity {
         val name = "smsf-call|${deviceMark.trim()}|$callDateMillis"
         return UUID.nameUUIDFromBytes(name.toByteArray(Charsets.UTF_8)).toString()
     }
+
+    /**
+     * 通话记录经 Webhook（JSON body）发送时自动带上 call_uuid，无需修改各手机上的模板配置。
+     * - 只处理 JSON 对象；数组 / 文本 / 非法 JSON 原样返回；
+     * - 模板里已写了 call_uuid（如 "{{CALL_UUID}}"）则尊重模板，不覆盖；
+     * - UUID 为空（拿不到通话记录）不写入，避免服务端唯一索引冲突。
+     * 以文本方式追加在末尾，不重新序列化，保证原有字段（数字格式、转义）一字不差。
+     */
+    fun injectCallUuid(body: String, callUuid: String): String {
+        if (callUuid.isEmpty()) return body
+        val obj = try {
+            JsonParser.parseString(body)
+        } catch (e: Exception) {
+            return body
+        }
+        if (!obj.isJsonObject || obj.asJsonObject.has(FIELD)) return body
+        val end = body.lastIndexOf('}')
+        if (end < 0) return body
+        val field = "\"$FIELD\":" + gson.toJson(callUuid)
+        val sep = if (obj.asJsonObject.size() == 0) "" else ","
+        return body.substring(0, end).trimEnd() + sep + field + body.substring(end)
+    }
+
+    private const val FIELD = "call_uuid"
+    private val gson = Gson()
 }

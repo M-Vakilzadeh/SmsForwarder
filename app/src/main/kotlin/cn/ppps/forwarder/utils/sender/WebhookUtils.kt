@@ -1,5 +1,6 @@
 package cn.ppps.forwarder.utils.sender
 
+import cn.ppps.forwarder.utils.CallIdentity
 import android.annotation.SuppressLint
 import android.text.TextUtils
 import android.util.Base64
@@ -149,7 +150,7 @@ class WebhookUtils {
                 XHttp.get(requestUrl).keepJson(true)
             } else if (webParams.isNotEmpty() && (isJson || isText || webParams.startsWith("{"))) {
                 webParams = msgInfo.replaceTemplate(webParams, "", "Gson", rule?.title ?: "")
-                val bodyMsg = webParams.replace("[from]", from)
+                var bodyMsg = webParams.replace("[from]", from)
                     .replace("[content]", escapeJson(content))
                     .replace("[msg]", escapeJson(content))
                     .replace("[org_content]", escapeJson(orgContent))
@@ -163,6 +164,10 @@ class WebhookUtils {
                     }
                     .replace("[timestamp]", timestamp.toString())
                     .replace("[sign]", sign)
+                //与 WebhookSyncUtils 一致：通话记录自动带上 call_uuid
+                if (msgInfo.type == "call" && !isText) {
+                    bodyMsg = CallIdentity.injectCallUuid(bodyMsg, CallIdentity.callUuid(deviceMark, msgInfo.callDateLong))
+                }
                 Log.d(TAG, "method = ${setting.method}, Url = $requestUrl, bodyMsg = $bodyMsg")
                 if (isText) {
                     when (setting.method) {

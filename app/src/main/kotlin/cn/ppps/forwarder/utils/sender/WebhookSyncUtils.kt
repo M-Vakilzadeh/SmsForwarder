@@ -1,5 +1,6 @@
 package cn.ppps.forwarder.utils.sender
 
+import cn.ppps.forwarder.utils.CallIdentity
 import android.text.TextUtils
 import android.util.Base64
 import cn.ppps.forwarder.core.Core
@@ -219,7 +220,7 @@ object WebhookSyncUtils {
             builder.url(requestUrl).get()
         } else if (webParams.isNotEmpty() && (isJson || isText || webParams.startsWith("{"))) {
             webParams = msgInfo.replaceTemplate(webParams, "", "Gson", rule?.title ?: "")
-            val bodyMsg = webParams.replace("[from]", from)
+            var bodyMsg = webParams.replace("[from]", from)
                 .replace("[content]", escapeJson(content))
                 .replace("[msg]", escapeJson(content))
                 .replace("[org_content]", escapeJson(orgContent))
@@ -233,6 +234,10 @@ object WebhookSyncUtils {
                 }
                 .replace("[timestamp]", timestamp.toString())
                 .replace("[sign]", sign)
+            //通话记录自动带上 call_uuid（与通话备注、对账同一公式），不必改各手机上的模板
+            if (msgInfo.type == "call" && !isText) {
+                bodyMsg = CallIdentity.injectCallUuid(bodyMsg, CallIdentity.callUuid(deviceMark, msgInfo.callDateLong))
+            }
             //body 自带 Content-Type，用用户配置的（没有则按 JSON/文本兜底），后面加 header 时跳过 Content-Type 避免重复
             val mediaTypeStr = contentTypeHeader ?: if (isText) "text/plain; charset=utf-8" else "application/json; charset=utf-8"
             val body = RequestBody.create(MediaType.parse(mediaTypeStr), bodyMsg)

@@ -7,6 +7,7 @@ import cn.ppps.forwarder.App.Companion.CALL_TYPE_MAP
 import cn.ppps.forwarder.R
 import cn.ppps.forwarder.utils.AppUtils
 import cn.ppps.forwarder.utils.BatteryUtils
+import cn.ppps.forwarder.utils.CallIdentity
 import cn.ppps.forwarder.utils.CallTiming
 import cn.ppps.forwarder.utils.HttpServerUtils
 import cn.ppps.forwarder.utils.Log
@@ -127,6 +128,8 @@ data class MsgInfo(
                 if (callDateLong > 0L) SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date(callDateLong)) else "",
                 encoderName
             )
+            //通话稳定标识：与通话备注、对账使用同一公式，服务端按它合并
+            .replaceTag(getString(R.string.tag_call_uuid), CallIdentity.callUuid(extraDeviceMark, callDateLong), encoderName)
             .replaceTag(getString(R.string.tag_ipv4), TaskUtils.ipv4, encoderName)
             .replaceTag(getString(R.string.tag_ipv6), TaskUtils.ipv6, encoderName)
             .replaceTag(getString(R.string.tag_ip_list), TaskUtils.ipList, encoderName)

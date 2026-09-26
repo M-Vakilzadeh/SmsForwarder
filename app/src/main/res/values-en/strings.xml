@@ -21,6 +21,7 @@
     <string name="update_available_text">Latest version %1$s — tap to open the app and install it</string>
     <string name="insert_tag_call_type_code">Call Type Code</string>
     <string name="insert_tag_call_date">Call Time</string>
+    <string name="insert_tag_call_uuid">Call UUID</string>
     <string name="insert_tag_location">Location</string>
     <string name="insert_tag_location_longitude">Longitude</string>
     <string name="insert_tag_location_latitude">Latitude</string>

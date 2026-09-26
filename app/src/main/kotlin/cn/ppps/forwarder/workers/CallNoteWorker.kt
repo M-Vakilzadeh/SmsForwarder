@@ -80,10 +80,12 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private fun enrich(note: CallNote): CallNote {
         if (note.callDate > 0) return note
         return try {
-            val info = PhoneUtils.getLastCallInfo(note.callType, note.number.ifBlank { null })
-                ?.takeIf { CallNoteUtils.matchesCall(it.dateLong, note.callStart, note.callEnd) }
-                ?: return note
-            note.copy(callDate = info.dateLong, callDuration = info.duration)
+            //不按号码查（广播与通话记录的号码格式可能不同），也不只看最后一条（发送前可能又打了别的电话），
+            //而是在最近的同类型记录里按本通话的时间窗口匹配
+            val calls = PhoneUtils.getCallInfoList(note.callType, MATCH_SCAN_ROWS, 0, null)
+            val info = CallNoteUtils.findMatch(calls, note.callType, note.callStart, note.callEnd) ?: return note
+            //号码以通话记录为准，与主通道的 [from] 保持一致
+            note.copy(callDate = info.dateLong, callDuration = info.duration, number = info.number.ifBlank { note.number })
         } catch (e: Exception) {
             Log.w(TAG, "补齐通话记录失败：${e.message}")
             note
@@ -96,6 +98,9 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
         private const val UNIQUE_PERIODIC = "call_note_batch"
         private const val MIN_PERIOD_MINUTES = 15L
         private const val BATCH_MAX = 50
+
+        //补齐通话记录时向前扫描的条数
+        private const val MATCH_SCAN_ROWS = 200
 
         private val connected = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 

@@ -1,5 +1,6 @@
 package cn.ppps.forwarder.workers
 
+import cn.ppps.forwarder.utils.CallIdentity
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.work.Constraints
@@ -96,7 +97,9 @@ class ReconcileWorker(context: Context, params: WorkerParameters) : CoroutineWor
             "duration" to callInfo.duration,
             "type" to callInfo.type,
             "sim_slot" to callInfo.simId,
-            "idempotency_key" to idempotencyKey
+            "idempotency_key" to idempotencyKey,
+            //与实时 /call 的 {{CALL_UUID}}、通话备注的 call_uuid 同一公式
+            "call_uuid" to CallIdentity.callUuid(deviceMark, callInfo.dateLong)
         )
     }
 

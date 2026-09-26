@@ -1,5 +1,6 @@
 package cn.ppps.forwarder.utils
 
+import cn.ppps.forwarder.entity.CallInfo
 import cn.ppps.forwarder.entity.CallNote
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -41,9 +42,16 @@ object CallNoteUtils {
     fun matchesCall(logDate: Long, callStart: Long, callEnd: Long): Boolean =
         logDate >= callStart - CLOCK_TOLERANCE_MILLIS && logDate <= callEnd
 
+    //在最近的通话记录里找属于这通电话的那一条：同类型、时间戳落在本通话窗口内，取最接近开始时刻的
+    fun findMatch(calls: List<CallInfo>, callType: Int, callStart: Long, callEnd: Long): CallInfo? =
+        calls.filter { it.type == callType && matchesCall(it.dateLong, callStart, callEnd) }
+            .minByOrNull { kotlin.math.abs(it.dateLong - callStart) }
+
     fun singlePayload(note: CallNote): Map<String, Any?> = linkedMapOf(
         "type" to "call_note",
         "note_id" to note.noteId,
+        //与通话记录（实时 /call 的 {{CALL_UUID}}、对账 /call/batch 的 call_uuid）同一公式，服务端按它合并
+        "call_uuid" to CallIdentity.callUuid(note.deviceMark, note.callDate),
         "device_mark" to note.deviceMark,
         "number" to note.number,
         "contact_name" to note.contactName,

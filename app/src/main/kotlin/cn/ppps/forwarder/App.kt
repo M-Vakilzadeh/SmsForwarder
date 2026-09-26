@@ -501,6 +501,7 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
                 getString(R.string.tag_ring_seconds) to getString(R.string.insert_tag_ring_seconds),
                 getString(R.string.tag_call_type_code) to getString(R.string.insert_tag_call_type_code),
                 getString(R.string.tag_call_date) to getString(R.string.insert_tag_call_date),
+                getString(R.string.tag_call_uuid) to getString(R.string.insert_tag_call_uuid),
                 getString(R.string.tag_contact_name) to getString(R.string.insert_tag_contact_name),
                 getString(R.string.tag_phone_area) to getString(R.string.insert_tag_phone_area),
                 getString(R.string.tag_rule_title) to getString(R.string.insert_tag_rule_title),

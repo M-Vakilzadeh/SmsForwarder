@@ -10,6 +10,7 @@ data class CallNote(
     //幂等键：重试/批量重发时服务端据此去重
     val noteId: String,
     val deviceMark: String,
+    //发送前以通话记录里的号码为准（与主通道 [from] 一致）
     val number: String,
     val contactName: String,
     //1=来电 2=去电

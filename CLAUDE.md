@@ -9,6 +9,11 @@
    Do not report the change as done until the tests pass and the Release build is green.
    If either fails, report the exact error instead of claiming success.
 
+## Language
+
+- Write everything in English, never Chinese: code comments, KDoc, commit messages, PR text, docs, changelogs, log messages and test names.
+- Existing Chinese text may stay as it is. When you edit a line or block that has a Chinese comment, rewrite that comment in English.
+
 ## Build environment
 
 ```

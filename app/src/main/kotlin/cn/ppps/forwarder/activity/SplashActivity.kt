@@ -32,7 +32,6 @@ class SplashActivity : BaseSplashActivity(), CancelAdapt {
      */
     override fun onSplashFinished() {
         //Skip upstream SmsForwarder's privacy-policy popup: go straight to the app.
-        //isAgreePrivacy is left untouched (it only gates UMeng analytics).
         whereToJump()
     }
 

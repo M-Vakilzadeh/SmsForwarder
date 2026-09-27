@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import android.os.Parcelable
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.umeng.analytics.MobclickAgent
 import com.xuexiang.xpage.base.XPageActivity
 import com.xuexiang.xpage.base.XPageFragment
 import com.xuexiang.xpage.base.XPageSimpleListFragment
@@ -43,16 +42,6 @@ abstract class BaseSimpleListFragment : XPageSimpleListFragment() {
             root.removeViewAt(0)
             initTitle()
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        MobclickAgent.onPageStart(pageName)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        MobclickAgent.onPageEnd(pageName)
     }
     //==============================页面跳转api===================================//
     /**

@@ -60,7 +60,6 @@ import cn.ppps.forwarder.utils.ProximitySensorScreenHelper
 import cn.ppps.forwarder.utils.AppLockUtils
 import cn.ppps.forwarder.utils.SettingUtils
 import cn.ppps.forwarder.utils.SharedPreference
-import cn.ppps.forwarder.utils.sdkinit.UMengInit
 import cn.ppps.forwarder.utils.sdkinit.XBasicLibInit
 import cn.ppps.forwarder.utils.sdkinit.XUpdateInit
 import cn.ppps.forwarder.utils.tinker.TinkerLoadLibrary
@@ -404,8 +403,6 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
         HistoryUtils.init(applicationContext)
         // 版本更新初始化
         XUpdateInit.init(this)
-        // 运营统计数据
-        UMengInit.init(this)
         // 初始化语种切换框架
         MultiLanguages.init(this)
         // 设置语种变化监听器

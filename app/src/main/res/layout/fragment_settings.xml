@@ -1304,61 +1304,6 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/online_import"
-                        android:textStyle="bold"
-                        tools:ignore="RelativeOverlap" />
-
-                    <com.xuexiang.xui.widget.button.shadowbutton.RippleShadowShadowButton
-                        android:id="@+id/btn_online_import_test"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="5dp"
-                        android:gravity="center"
-                        android:padding="3dp"
-                        android:text="@string/test"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/text_size_mini"
-                        app:sb_color_unpressed="@color/colorPrimary"
-                        app:sb_ripple_color="@color/white"
-                        app:sb_ripple_duration="500"
-                        app:sb_shape_type="rectangle"
-                        tools:ignore="PrivateResource,SmallSp" />
-
-                    <com.xuexiang.xui.widget.button.shadowbutton.RippleShadowShadowButton
-                        android:id="@+id/btn_online_import"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="5dp"
-                        android:gravity="center"
-                        android:padding="3dp"
-                        android:text="@string/online_import_update"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/text_size_mini"
-                        app:sb_color_unpressed="@color/colorPrimary"
-                        app:sb_ripple_color="@color/white"
-                        app:sb_ripple_duration="500"
-                        app:sb_shape_type="rectangle"
-                        tools:ignore="PrivateResource,SmallSp" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/online_import_tips"
-                    android:textSize="@dimen/text_size_mini"
-                    tools:ignore="SmallSp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/net_alert"
                         android:textStyle="bold"
                         tools:ignore="RelativeOverlap" />
@@ -1727,6 +1672,48 @@
 
                         <com.xuexiang.xui.widget.button.shadowbutton.RippleShadowShadowButton
                             android:id="@+id/btn_call_note_batch_interval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:gravity="center"
+                            android:padding="3dp"
+                            android:text="@string/select"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_mini"
+                            app:sb_color_unpressed="@color/colorPrimary"
+                            app:sb_ripple_color="@color/white"
+                            app:sb_ripple_duration="500"
+                            app:sb_shape_type="rectangle"
+                            tools:ignore="PrivateResource,SmallSp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_call_note_batch_time_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/call_note_batch_time_label"
+                            android:textStyle="bold"
+                            tools:ignore="RelativeOverlap" />
+
+                        <TextView
+                            android:id="@+id/tv_call_note_batch_time"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:singleLine="true" />
+
+                        <com.xuexiang.xui.widget.button.shadowbutton.RippleShadowShadowButton
+                            android:id="@+id/btn_call_note_batch_time"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"

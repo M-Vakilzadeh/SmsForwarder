@@ -108,12 +108,6 @@ const val FORWARD_TIMING_DAILY = 1
 //最近一次转发成功的时间戳（供心跳上报，判断设备是否还在正常出数据）
 const val SP_LAST_FORWARD_SUCCESS_TIME = "last_forward_success_time"
 
-//新机首次打开时，弹窗提示从该地址下载并导入配置（批量装机加速）。留空则弹窗里手动填写。
-//部署时把这里改成你的配置 JSON 地址（即 SmsForwarder.json 的导出格式）即可。
-const val DEFAULT_CONFIG_IMPORT_URL = ""
-//在线导入配置的地址（持久化，设置页可修改，首次弹窗与「更新」按钮共用）；默认取上面的常量
-const val SP_CONFIG_IMPORT_URL = "config_import_url"
-
 //应用锁：打开 App 需要输入的密码的哈希（SHA-256）。空=未设锁。
 const val SP_APP_LOCK_HASH = "app_lock_hash"
 
@@ -130,6 +124,8 @@ const val SP_CALL_NOTE_DISPLAY_MODE = "call_note_display_mode"
 //发送方式：0=写完立即发送，1=按周期批量发送
 const val SP_CALL_NOTE_SEND_MODE = "call_note_send_mode"
 const val SP_CALL_NOTE_BATCH_INTERVAL = "call_note_batch_interval_minutes"
+//通话备注「每天定时」批量发送的时间点（DailyTime 下标，10 分钟一档）
+const val SP_CALL_NOTE_BATCH_TIME = "call_note_batch_time"
 const val CALL_NOTE_DISPLAY_POPUP = 0
 const val CALL_NOTE_DISPLAY_NOTIFICATION = 1
 const val CALL_NOTE_SEND_REALTIME = 0

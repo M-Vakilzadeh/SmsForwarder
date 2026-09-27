@@ -13,10 +13,12 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import cn.ppps.forwarder.entity.CallNote
 import cn.ppps.forwarder.entity.setting.WebhookSetting
+import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
 import cn.ppps.forwarder.utils.CALL_NOTE_SEND_BATCH
 import cn.ppps.forwarder.utils.CALL_NOTE_SEND_REALTIME
 import cn.ppps.forwarder.utils.CallNoteStore
 import cn.ppps.forwarder.utils.CallNoteUtils
+import cn.ppps.forwarder.utils.DailyTime
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
 import cn.ppps.forwarder.utils.SettingUtils
@@ -138,12 +140,20 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 if (enabled && CallNoteStore.snapshot(context).isNotEmpty()) flushNow(context)
                 return
             }
-            val period = SettingUtils.callNoteBatchInterval.toLong().coerceAtLeast(MIN_PERIOD_MINUTES)
-            val request = PeriodicWorkRequestBuilder<CallNoteWorker>(period, TimeUnit.MINUTES)
-                .setConstraints(connected)
-                .build()
+            val interval = SettingUtils.callNoteBatchInterval
+            val request = if (interval >= BATCH_INTERVAL_DAILY) {
+                //每天定时：24 小时周期 + 初始延迟到下一个设定时间点（与每日汇总转发一致）
+                PeriodicWorkRequestBuilder<CallNoteWorker>(24, TimeUnit.HOURS)
+                    .setInitialDelay(DailyTime.delayUntilSlot(SettingUtils.callNoteBatchTime), TimeUnit.MILLISECONDS)
+                    .setConstraints(connected)
+                    .build()
+            } else {
+                PeriodicWorkRequestBuilder<CallNoteWorker>(interval.toLong().coerceAtLeast(MIN_PERIOD_MINUTES), TimeUnit.MINUTES)
+                    .setConstraints(connected)
+                    .build()
+            }
             wm.enqueueUniquePeriodicWork(UNIQUE_PERIODIC, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, request)
-            Log.d(TAG, "已安排通话备注批量发送，period=${period}min")
+            Log.d(TAG, "已安排通话备注批量发送，interval=${interval}min, time=${SettingUtils.callNoteBatchTime}")
         }
 
         /**

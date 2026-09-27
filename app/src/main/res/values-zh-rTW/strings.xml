@@ -909,11 +909,6 @@
     <string name="batch_interval_every_hours">每 %1$d 小時</string>
     <string name="batch_interval_daily">每天定時</string>
     <string name="skip">跳過</string>
-    <string name="provision_import_title">匯入設定</string>
-    <string name="provision_import_content">偵測到新裝置，可從伺服器下載並一鍵匯入設定（轉發規則、傳送通道、各項設定），加快裝機。</string>
-    <string name="provision_import_url_hint">設定檔位址(URL)</string>
-    <string name="provision_import_download">下載並匯入</string>
-    <string name="provision_downloading">正在下載設定…</string>
     <string name="app_lock">應用鎖</string>
     <string name="app_lock_set_btn">設定</string>
     <string name="app_lock_tips">設定密碼後，開啟本 App 需先輸入密碼；留空可清除應用鎖。</string>
@@ -924,9 +919,6 @@
     <string name="app_lock_set_prompt">輸入新密碼；留空則清除應用鎖</string>
     <string name="app_lock_set_done">應用鎖已設定</string>
     <string name="app_lock_cleared">應用鎖已清除</string>
-    <string name="online_import">線上匯入設定</string>
-    <string name="online_import_update">更新</string>
-    <string name="online_import_tips">從伺服器位址下載最新設定備份並匯入（轉發規則、傳送通道、各項設定）。</string>
     <string name="net_alert">網路狀態告警</string>
     <string name="net_alert_tips">按週期檢查網路並呼叫你設定的 webhook，用於監測裝置是否線上。</string>
     <string name="net_alert_url_label">Webhook 位址</string>
@@ -935,7 +927,6 @@
     <string name="testing">正在測試…</string>
     <string name="test_ok">測試成功：</string>
     <string name="test_failed">測試失敗：</string>
-    <string name="online_import_failed">線上匯入失敗：</string>
     <string name="download_frpc_tips">是否立即下載，並重啟加載？</string>
     <string name="download_frpc_tips2">下載成功，是否立即重啟加載？</string>
     <string name="appkey">AppKey</string>
@@ -1313,7 +1304,7 @@
     <string name="call_note_outgoing">去電</string>
     <string name="default_config_title">初始設定</string>
     <string name="default_config_base_url_content">請輸入伺服器基礎位址（baseurl），所有 Webhook 位址都據此產生。</string>
-    <string name="default_config_base_url_hint">基礎位址，例如 https://n8n.kzmn.ir</string>
+    <string name="default_config_base_url_hint">基礎位址，例如 https://example.com</string>
     <string name="default_config_device_name_content">請輸入本機的裝置名稱（每筆記錄都會帶上）。</string>
     <string name="default_config_device_name_hint">裝置名稱</string>
     <string name="default_config_invalid_url">位址無效，請重新輸入</string>
@@ -1321,4 +1312,5 @@
     <string name="default_config_failed">初始設定失敗：</string>
     <string name="default_config_next">下一步</string>
     <string name="default_config_done">設定已完成，需要重新啟動 App 以便生效。</string>
+    <string name="call_note_batch_time_label">每天傳送時間</string>
 </resources>

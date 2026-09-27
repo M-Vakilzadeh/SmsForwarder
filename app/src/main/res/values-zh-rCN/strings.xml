@@ -909,11 +909,6 @@
     <string name="batch_interval_every_hours">每 %1$d 小时</string>
     <string name="batch_interval_daily">每天定时</string>
     <string name="skip">跳过</string>
-    <string name="provision_import_title">导入配置</string>
-    <string name="provision_import_content">检测到新设备，可从服务器下载并一键导入配置（转发规则、发送通道、各项设置），加快装机。</string>
-    <string name="provision_import_url_hint">配置文件地址(URL)</string>
-    <string name="provision_import_download">下载并导入</string>
-    <string name="provision_downloading">正在下载配置…</string>
     <string name="app_lock">应用锁</string>
     <string name="app_lock_set_btn">设置</string>
     <string name="app_lock_tips">设置密码后，打开本 App 需先输入密码；留空可清除应用锁。</string>
@@ -924,9 +919,6 @@
     <string name="app_lock_set_prompt">输入新密码；留空则清除应用锁</string>
     <string name="app_lock_set_done">应用锁已设置</string>
     <string name="app_lock_cleared">应用锁已清除</string>
-    <string name="online_import">在线导入配置</string>
-    <string name="online_import_update">更新</string>
-    <string name="online_import_tips">从服务器地址下载最新配置备份并导入（转发规则、发送通道、各项设置）。</string>
     <string name="net_alert">网络状态告警</string>
     <string name="net_alert_tips">按周期检查网络并调用你设置的 webhook，用于监测设备是否在线。</string>
     <string name="net_alert_url_label">Webhook 地址</string>
@@ -935,7 +927,6 @@
     <string name="testing">正在测试…</string>
     <string name="test_ok">测试成功：</string>
     <string name="test_failed">测试失败：</string>
-    <string name="online_import_failed">在线导入失败：</string>
     <string name="download_frpc_tips">是否立即下载，并重启加载？</string>
     <string name="download_frpc_tips2">下载成功，是否立即重启加载？</string>
     <string name="appkey">AppKey</string>
@@ -1312,7 +1303,7 @@
     <string name="call_note_outgoing">去电</string>
     <string name="default_config_title">初始设置</string>
     <string name="default_config_base_url_content">请输入服务器基础地址（baseurl），所有 Webhook 地址都据此生成。</string>
-    <string name="default_config_base_url_hint">基础地址，例如 https://n8n.kzmn.ir</string>
+    <string name="default_config_base_url_hint">基础地址，例如 https://example.com</string>
     <string name="default_config_device_name_content">请输入本机的设备名称（每条记录都会带上）。</string>
     <string name="default_config_device_name_hint">设备名称</string>
     <string name="default_config_invalid_url">地址无效，请重新输入</string>
@@ -1320,4 +1311,5 @@
     <string name="default_config_failed">初始设置失败：</string>
     <string name="default_config_next">下一步</string>
     <string name="default_config_done">配置已完成，需要重启 App 以便生效。</string>
+    <string name="call_note_batch_time_label">每天发送时间</string>
 </resources>

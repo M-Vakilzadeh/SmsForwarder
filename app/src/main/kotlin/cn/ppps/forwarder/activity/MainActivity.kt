@@ -205,7 +205,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     }
 
     /**
-     * 新机首次打开：依次询问 baseurl（默认 [DefaultConfig.DEFAULT_BASE_URL]）和设备名称，然后导入内置默认配置。
+     * 新机首次打开：依次询问 baseurl（不预填，由用户输入）和设备名称，然后导入内置默认配置。
      * 不可取消，导入成功才标记完成，中途退出下次打开会再问；已配置过发送通道的（老设备升级）不打扰。
      */
     private fun maybeShowDefaultConfigSetup() {
@@ -215,7 +215,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
                 DefaultConfig.markApplied(this)
                 return
             }
-            askBaseUrl(DefaultConfig.DEFAULT_BASE_URL)
+            askBaseUrl("")
         } catch (e: Exception) {
             Log.e(TAG, "maybeShowDefaultConfigSetup: ${e.message}")
         }

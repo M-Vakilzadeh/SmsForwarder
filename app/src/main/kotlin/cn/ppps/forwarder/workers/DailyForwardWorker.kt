@@ -13,12 +13,12 @@ import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
 import cn.ppps.forwarder.utils.FORWARD_TIMING_DAILY
 import cn.ppps.forwarder.utils.Log
 import cn.ppps.forwarder.utils.PhoneUtils
+import cn.ppps.forwarder.utils.DailyTime
 import cn.ppps.forwarder.utils.SettingUtils
 import com.xuexiang.xrouter.utils.TextUtils
 import com.xuexiang.xutil.resource.ResUtils.getString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Calendar
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -147,7 +147,7 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
             val request = if (interval >= BATCH_INTERVAL_DAILY) {
                 //每天定时：24 小时周期 + 初始延迟到下一个设定时间点
                 PeriodicWorkRequestBuilder<DailyForwardWorker>(24, TimeUnit.HOURS)
-                    .setInitialDelay(computeInitialDelayMillis(), TimeUnit.MILLISECONDS)
+                    .setInitialDelay(DailyTime.delayUntilSlot(SettingUtils.dailyForwardTime), TimeUnit.MILLISECONDS)
                     .build()
             } else {
                 //每 N 分钟
@@ -159,22 +159,5 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
             Log.d(TAG, "已安排定时汇总任务，interval=${interval}min")
         }
 
-        //根据设置的时间下标（10 分钟一档）算出距离下一个该时间点的毫秒数
-        private fun computeInitialDelayMillis(): Long {
-            val totalMinutes = SettingUtils.dailyForwardTime * 10
-            val hour = totalMinutes / 60
-            val minute = totalMinutes % 60
-            val now = Calendar.getInstance()
-            val target = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            if (target.timeInMillis <= now.timeInMillis) {
-                target.add(Calendar.DAY_OF_MONTH, 1)
-            }
-            return target.timeInMillis - now.timeInMillis
-        }
     }
 }

@@ -4,18 +4,22 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import cn.ppps.forwarder.entity.CloneInfo
+import cn.ppps.forwarder.workers.CallNoteWorker
+import cn.ppps.forwarder.workers.DailyForwardWorker
 import cn.ppps.forwarder.workers.NetAlertWorker
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
 import java.net.URI
+import java.util.Calendar
 import java.util.Date
 
 /**
  * 内置默认配置：assets/default_config.json（「一键换新机」导出的 CloneInfo 结构），
  * 其中所有地址的域名部分写成 [PLACEHOLDER]，首次打开时由用户填写 baseurl 与设备名称后导入。
  *
- * settings 是序列化后的 SharedPreferences，里面的网络告警地址是 URL 编码的，文本替换够不到，
- * 所以还原之后再对 [SettingUtils.netAlertUrl] 单独替换一次。
+ * settings 是序列化后的 SharedPreferences，里面的网络告警/通话备注地址是 URL 编码的，文本替换够不到，
+ * 所以还原之后再对 [SettingUtils.netAlertUrl]、[SettingUtils.callNoteUrl] 单独替换一次。
+ * 每日汇总转发的时间点不写在配置里，取首次设置的时刻，让各设备错开、减轻服务端压力。
  *
  * 「是否已完成」存放在独立的 SharedPreferences 文件里，不随配置导入被清空；只有导入成功才标记。
  */
@@ -23,7 +27,6 @@ object DefaultConfig {
 
     private const val TAG = "DefaultConfig"
     const val PLACEHOLDER = "{{BASE_URL}}"
-    const val DEFAULT_BASE_URL = "https://n8n.kzmn.ir"
     private const val ASSET = "default_config.json"
     private const val PREFS = "provision_prefs"
     private const val KEY_APPLIED = "default_config_applied"
@@ -48,7 +51,7 @@ object DefaultConfig {
 
     fun parse(json: String): CloneInfo {
         val gson = GsonBuilder()
-            //Date 字段统一替换为当前时间（与 CloneFragment/ProvisionUtils 导入一致）
+            //Date 字段统一替换为当前时间（与 CloneFragment 导入一致）
             .registerTypeAdapter(Date::class.java, JsonDeserializer<Any?> { _, _, _ -> Date() })
             .create()
         return gson.fromJson(json, CloneInfo::class.java)
@@ -75,7 +78,14 @@ object DefaultConfig {
                 //restoreSettings 会保留旧的设备名称，这里再覆盖成用户填写的
                 SettingUtils.extraDeviceMark = deviceName
                 SettingUtils.netAlertUrl = applyBaseUrl(SettingUtils.netAlertUrl, baseUrl)
+                SettingUtils.callNoteUrl = applyBaseUrl(SettingUtils.callNoteUrl, baseUrl)
+                val now = Calendar.getInstance()
+                SettingUtils.dailyForwardTime = DailyTime.slotOf(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
                 NetAlertWorker.schedule(appContext)
+                CallNoteWorker.schedule(appContext)
+                DailyForwardWorker.schedule(appContext)
+                //随后会重启进程：用 commit 把上面 apply 的设置同步落盘，避免进程退出时丢失
+                SharedPreference.preference.edit().commit()
                 markApplied(appContext)
             } catch (e: Exception) {
                 Log.e(TAG, "导入内置配置失败：${e.message}", e)

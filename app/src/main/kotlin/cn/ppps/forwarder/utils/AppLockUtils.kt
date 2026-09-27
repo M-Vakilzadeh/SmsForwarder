@@ -20,7 +20,7 @@ object AppLockUtils {
 
     fun verify(plain: String): Boolean = isLockSet() && sha256(plain) == SettingUtils.appLockHash
 
-    private fun sha256(s: String): String {
+    internal fun sha256(s: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(s.toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it) }
     }

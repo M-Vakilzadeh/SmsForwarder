@@ -44,7 +44,6 @@ import cn.ppps.forwarder.utils.AppLockUtils
 import cn.ppps.forwarder.utils.BATCH_INTERVAL_DAILY
 import cn.ppps.forwarder.utils.EVENT_TOAST_ERROR
 import cn.ppps.forwarder.utils.EVENT_TOAST_SUCCESS
-import cn.ppps.forwarder.utils.ProvisionUtils
 import cn.ppps.forwarder.workers.NetAlertWorker
 import cn.ppps.forwarder.workers.CallNoteWorker
 import cn.ppps.forwarder.utils.CallNotePopup
@@ -256,8 +255,6 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.btnBatchInterval.setOnClickListener(this)
         binding!!.btnDailyForwardTime.setOnClickListener(this)
         binding!!.btnAppLock.setOnClickListener(this)
-        binding!!.btnOnlineImport.setOnClickListener(this)
-        binding!!.btnOnlineImportTest.setOnClickListener(this)
         binding!!.btnNetAlertUrl.setOnClickListener(this)
         binding!!.btnNetAlertTest.setOnClickListener(this)
         binding!!.btnNetAlertInterval.setOnClickListener(this)
@@ -267,6 +264,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.btnCallNoteOverlay.setOnClickListener(this)
         binding!!.btnCallNoteSendMode.setOnClickListener(this)
         binding!!.btnCallNoteBatchInterval.setOnClickListener(this)
+        binding!!.btnCallNoteBatchTime.setOnClickListener(this)
         binding!!.btnExtraDeviceMark.setOnClickListener(this)
         binding!!.btnExtraSim1.setOnClickListener(this)
         binding!!.btnExtraSim2.setOnClickListener(this)
@@ -327,33 +325,6 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     .positiveText(R.string.confirm)
                     .negativeText(R.string.cancel)
                     .show()
-            }
-
-            R.id.btn_online_import -> {
-                MaterialDialog.Builder(requireContext())
-                    .title(R.string.online_import)
-                    .content(R.string.provision_import_url_hint)
-                    .inputType(InputType.TYPE_TEXT_VARIATION_URI)
-                    .input(getString(R.string.provision_import_url_hint), SettingUtils.configImportUrl, false) { _: MaterialDialog?, input: CharSequence? ->
-                        val url = input?.toString()?.trim() ?: ""
-                        if (url.isNotEmpty()) doOnlineImport(url)
-                    }
-                    .positiveText(R.string.online_import_update)
-                    .negativeText(R.string.cancel)
-                    .show()
-            }
-
-            R.id.btn_online_import_test -> {
-                val url = SettingUtils.configImportUrl.trim()
-                if (url.isEmpty()) {
-                    XToastUtils.error(getString(R.string.provision_import_url_hint))
-                    return
-                }
-                XToastUtils.toast(getString(R.string.testing))
-                ProvisionUtils.testConfigUrl(url) { ok: Boolean, msg: String ->
-                    if (ok) XToastUtils.success(getString(R.string.test_ok) + " " + msg)
-                    else XToastUtils.error(getString(R.string.test_failed) + " " + msg)
-                }
             }
 
             R.id.btn_net_alert_test -> {
@@ -467,16 +438,29 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
             }
 
             R.id.btn_call_note_batch_interval -> {
-                val labels = netAlertIntervalOptions.map { intervalLabelMinutes(it) }
-                val currentIdx = netAlertIntervalOptions.indexOf(SettingUtils.callNoteBatchInterval).let { if (it < 0) 2 else it }
+                //与转发周期同一组选项：15/30 分钟 … 12 小时、每天定时
+                val labels = batchIntervalOptions.map { batchIntervalLabel(it) }
+                val currentIdx = batchIntervalOptions.indexOf(SettingUtils.callNoteBatchInterval).let { if (it < 0) 2 else it }
                 OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
-                    val chosen = netAlertIntervalOptions[options1]
+                    val chosen = batchIntervalOptions[options1]
                     SettingUtils.callNoteBatchInterval = chosen
-                    binding!!.tvCallNoteBatchInterval.text = intervalLabelMinutes(chosen)
+                    refreshCallNoteViews()
                     CallNoteWorker.schedule(requireContext())
                     return@OnOptionsSelectListener false
                 }).setTitleText(getString(R.string.call_note_batch_interval_label)).setSelectOptions(currentIdx).build<Any>().also {
                     it.setPicker(labels)
+                    it.show()
+                }
+            }
+
+            R.id.btn_call_note_batch_time -> {
+                OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
+                    SettingUtils.callNoteBatchTime = options1
+                    binding!!.tvCallNoteBatchTime.text = mTimeOption[options1]
+                    CallNoteWorker.schedule(requireContext())
+                    return@OnOptionsSelectListener false
+                }).setTitleText(getString(R.string.call_note_batch_time_label)).setSelectOptions(SettingUtils.callNoteBatchTime).build<Any>().also {
+                    it.setPicker(mTimeOption)
                     it.show()
                 }
             }
@@ -673,7 +657,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         }
     }
 
-    //通话备注：开关 + 地址 + 展示方式（弹窗/通知）+ 悬浮窗权限 + 发送方式（立即/批量）+ 批量周期
+    //通话备注：开关 + 地址 + 展示方式（弹窗/通知）+ 悬浮窗权限 + 发送方式（立即/批量）+ 批量周期（可每天定时）
     private fun setupCallNote() {
         refreshCallNoteViews()
         val enabled = SettingUtils.callNoteEnabled
@@ -691,8 +675,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         binding!!.tvCallNoteUrl.text = SettingUtils.callNoteUrl
         binding!!.tvCallNoteDisplay.text = callNoteDisplayLabel(SettingUtils.callNoteDisplayMode)
         binding!!.tvCallNoteSendMode.text = callNoteSendLabel(SettingUtils.callNoteSendMode)
-        binding!!.tvCallNoteBatchInterval.text = intervalLabelMinutes(SettingUtils.callNoteBatchInterval)
-        binding!!.layoutCallNoteBatchIntervalRow.visibility = if (SettingUtils.callNoteSendMode == CALL_NOTE_SEND_BATCH) View.VISIBLE else View.GONE
+        binding!!.tvCallNoteBatchInterval.text = batchIntervalLabel(SettingUtils.callNoteBatchInterval)
+        binding!!.tvCallNoteBatchTime.text = mTimeOption[SettingUtils.callNoteBatchTime]
+        val isBatch = SettingUtils.callNoteSendMode == CALL_NOTE_SEND_BATCH
+        binding!!.layoutCallNoteBatchIntervalRow.visibility = if (isBatch) View.VISIBLE else View.GONE
+        binding!!.layoutCallNoteBatchTimeRow.visibility = if (isBatch && SettingUtils.callNoteBatchInterval >= BATCH_INTERVAL_DAILY) View.VISIBLE else View.GONE
         refreshCallNoteOverlay()
     }
 
@@ -743,29 +730,6 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
                     if (binding != null) refreshCallNoteOverlay()
                 }
             })
-    }
-
-    //在线下载配置并导入，成功后重启到主界面（与「一键换新机」导入一致）
-    private fun doOnlineImport(url: String) {
-        SettingUtils.configImportUrl = url
-        XToastUtils.toast(getString(R.string.provision_downloading))
-        ProvisionUtils.downloadAndImport(url) { ok: Boolean, msg: String? ->
-            if (ok) {
-                MaterialDialog.Builder(requireContext())
-                    .title(R.string.clone)
-                    .content(R.string.import_succeeded)
-                    .cancelable(false)
-                    .positiveText(R.string.confirm)
-                    .onPositive { _: MaterialDialog?, _: DialogAction? ->
-                        val intent = Intent(App.context, MainActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        startActivity(intent)
-                    }
-                    .show()
-            } else {
-                XToastUtils.error(getString(R.string.online_import_failed) + (msg ?: ""))
-            }
-        }
     }
 
     private fun batchIntervalLabel(minutes: Int): String {

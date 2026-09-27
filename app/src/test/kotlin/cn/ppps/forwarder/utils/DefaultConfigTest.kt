@@ -18,10 +18,10 @@ class DefaultConfigTest {
 
     @Test
     fun normalizeBaseUrl_addsSchemeAndStripsSlash() {
-        assertEquals("https://n8n.kzmn.ir", DefaultConfig.normalizeBaseUrl("n8n.kzmn.ir"))
-        assertEquals("https://n8n.kzmn.ir", DefaultConfig.normalizeBaseUrl("  https://n8n.kzmn.ir/  "))
+        assertEquals("https://hooks.example.com", DefaultConfig.normalizeBaseUrl("hooks.example.com"))
+        assertEquals("https://hooks.example.com", DefaultConfig.normalizeBaseUrl("  https://hooks.example.com/  "))
         assertEquals("http://10.0.0.5:5678", DefaultConfig.normalizeBaseUrl("http://10.0.0.5:5678//"))
-        assertEquals("https://a.b/n8n", DefaultConfig.normalizeBaseUrl("https://a.b/n8n/"))
+        assertEquals("https://a.b/hooks", DefaultConfig.normalizeBaseUrl("https://a.b/hooks/"))
     }
 
     @Test
@@ -66,9 +66,46 @@ class DefaultConfigTest {
         assertEquals("{{BASE_URL}}/webhook/logger-alert", map["net_alert_url"])
         assertEquals(true, map["enable_phone"])
         assertEquals(true, map["net_alert_enabled"])
-        //通话实时转发（0 = FORWARD_TIMING_REALTIME），不走每日汇总
-        assertEquals(FORWARD_TIMING_REALTIME, map["forward_timing"])
+    }
+
+    //通话按每日汇总转发；具体时间不写在配置里，导入时取首次设置的时刻，让各设备错开、减轻服务端压力
+    @Test
+    fun asset_callsForwardedDailyAtFirstRunTime() {
+        val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
+        assertEquals(FORWARD_TIMING_DAILY, map["forward_timing"])
+        assertEquals(BATCH_INTERVAL_DAILY, map["batch_interval_minutes"])
+        assertEquals(true, map["daily_include_call"])
+        assertFalse(map.containsKey("daily_forward_time"))
+    }
+
+    //通话备注：开启，地址为 {{BASE_URL}}/webhook/call-note，每天 14:00 批量发送
+    @Test
+    fun asset_callNoteEnabledDailyAt1400() {
+        val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
+        assertEquals(true, map["call_note_enabled"])
+        assertEquals("{{BASE_URL}}/webhook/call-note", map["call_note_url"])
+        assertEquals(CALL_NOTE_SEND_BATCH, map["call_note_send_mode"])
+        assertEquals(BATCH_INTERVAL_DAILY, map["call_note_batch_interval_minutes"])
+        assertEquals(DailyTime.slotOf(14, 0), map["call_note_batch_time"])
+    }
+
+    //应用锁默认开启，密码 1331（只存哈希）
+    @Test
+    fun asset_appLockIs1331() {
+        val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
+        assertEquals(AppLockUtils.sha256("1331"), map["app_lock_hash"])
+    }
+
+    //默认配置里不能出现 n8n 字样和原手机的设备名
+    @Test
+    fun asset_hasNoServerOrOwnerNames() {
+        assertFalse(template.contains("n8n", ignoreCase = true))
         assertFalse(template.contains("kzmn"))
+        val settings = String(java.net.URLDecoder.decode(DefaultConfig.parse(template).settings, "UTF-8").toByteArray(Charsets.ISO_8859_1), Charsets.UTF_8)
+        assertFalse(settings.contains("n8n", ignoreCase = true))
+        assertFalse(settings.contains("محسن"))
+        val names = DefaultConfig.parse(template).senderList!!.map { it.name }
+        assertFalse(names.any { it.contains("n8n", ignoreCase = true) })
     }
 
     @Test

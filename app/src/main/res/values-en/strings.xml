@@ -912,11 +912,6 @@
     <string name="batch_interval_every_hours">Every %1$d h</string>
     <string name="batch_interval_daily">Daily at set time</string>
     <string name="skip">Skip</string>
-    <string name="provision_import_title">Import Config</string>
-    <string name="provision_import_content">New device detected. You can download and import the configuration (rules, senders, settings) in one tap to speed up setup.</string>
-    <string name="provision_import_url_hint">Config file URL</string>
-    <string name="provision_import_download">Download &amp; Import</string>
-    <string name="provision_downloading">Downloading config…</string>
     <string name="app_lock">App Lock</string>
     <string name="app_lock_set_btn">Set</string>
     <string name="app_lock_tips">After setting a password, opening this app requires it; leave empty to remove the lock.</string>
@@ -927,9 +922,6 @@
     <string name="app_lock_set_prompt">Enter a new password; leave empty to remove the lock</string>
     <string name="app_lock_set_done">App lock set</string>
     <string name="app_lock_cleared">App lock removed</string>
-    <string name="online_import">Online Config Import</string>
-    <string name="online_import_update">Update</string>
-    <string name="online_import_tips">Download the latest config backup from the server URL and import it (rules, senders, settings).</string>
     <string name="net_alert">Network Alert</string>
     <string name="net_alert_tips">Periodically check the network and call your webhook to monitor whether the device is online.</string>
     <string name="net_alert_url_label">Webhook URL</string>
@@ -938,7 +930,6 @@
     <string name="testing">Testing…</string>
     <string name="test_ok">Test OK:</string>
     <string name="test_failed">Test failed:</string>
-    <string name="online_import_failed">Online import failed:</string>
     <string name="download_frpc_tips">Do you want to download and restart to load!</string>
     <string name="download_frpc_tips2">Download successful, do you want to restart the loading now?</string>
     <string name="appkey">AppKey</string>
@@ -1315,7 +1306,7 @@
     <string name="call_note_outgoing">Outgoing</string>
     <string name="default_config_title">Initial setup</string>
     <string name="default_config_base_url_content">Enter the server base URL. All webhook addresses are built from it.</string>
-    <string name="default_config_base_url_hint">Base URL, e.g. https://n8n.kzmn.ir</string>
+    <string name="default_config_base_url_hint">Base URL, e.g. https://example.com</string>
     <string name="default_config_device_name_content">Enter this device\'s name (sent with every record).</string>
     <string name="default_config_device_name_hint">Device name</string>
     <string name="default_config_invalid_url">Invalid URL, please try again</string>
@@ -1323,4 +1314,5 @@
     <string name="default_config_failed">Initial setup failed: </string>
     <string name="default_config_next">Next</string>
     <string name="default_config_done">Setup complete. The app needs to restart to apply it.</string>
+    <string name="call_note_batch_time_label">Daily send time</string>
 </resources>

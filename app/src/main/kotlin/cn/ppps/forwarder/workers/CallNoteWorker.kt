@@ -132,8 +132,9 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
          * 按当前设置（重新）安排批量发送任务：未开启/地址为空/立即模式 → 取消周期任务。
          * 立即模式下顺带补发一次积压（例如刚从批量切回立即）。
          *
-         * reanchor=false（App 启动时用）：已有任务就保留（KEEP）。每天定时的任务若因断网/Doze 过了时间点还没跑，
-         * 重排会把它推到明天、丢掉当天那一轮；设置变更、配置导入用默认 true，立即按新设置重新锚定。
+         * reanchor=false (used at app start): keep an existing job (KEEP). If a daily job missed its slot because of
+         * no network or Doze, re-enqueueing would push it to tomorrow and skip that day. Settings changes and
+         * config imports use the default true to re-anchor to the new settings immediately.
          */
         fun schedule(context: Context, reanchor: Boolean = true) {
             val wm = WorkManager.getInstance(context)
@@ -145,7 +146,7 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
             val interval = SettingUtils.callNoteBatchInterval
             val request = if (interval >= BATCH_INTERVAL_DAILY) {
-                //每天定时：24 小时周期 + 初始延迟到下一个设定时间点（与每日汇总转发一致）
+                //Daily at a set time: 24 h period with an initial delay to the next slot (same as daily batch forwarding)
                 PeriodicWorkRequestBuilder<CallNoteWorker>(24, TimeUnit.HOURS)
                     .setInitialDelay(DailyTime.delayUntilSlot(SettingUtils.callNoteBatchTime), TimeUnit.MILLISECONDS)
                     .setConstraints(connected)
@@ -157,7 +158,7 @@ class CallNoteWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
             val policy = if (reanchor) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP
             wm.enqueueUniquePeriodicWork(UNIQUE_PERIODIC, policy, request)
-            Log.d(TAG, "已安排通话备注批量发送，interval=${interval}min, time=${SettingUtils.callNoteBatchTime}")
+            Log.d(TAG, "Scheduled call-note batch, interval=${interval}min, time=${SettingUtils.callNoteBatchTime}")
         }
 
         /**

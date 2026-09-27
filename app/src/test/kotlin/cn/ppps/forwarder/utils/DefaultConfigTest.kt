@@ -40,7 +40,7 @@ class DefaultConfigTest {
         assertEquals("https://other/x", DefaultConfig.applyBaseUrl("https://other/x", "https://h"))
     }
 
-    //内置配置：发送通道（含规则里内嵌的副本）都指向用户填写的 baseurl，路径与原配置一致
+    //Bundled config: every sender (including the copy embedded in the rule) points at the entered base URL, same paths as the original
     @Test
     fun asset_sendersPointAtBaseUrl() {
         val info = DefaultConfig.parse(DefaultConfig.applyBaseUrl(template, "https://example.org"))
@@ -54,7 +54,7 @@ class DefaultConfigTest {
             JsonParser.parseString(rule.senderList.single().jsonSetting).asJsonObject.get("webServer").asString)
     }
 
-    //仓库是公开的：内置配置不能带原手机的 IP、设备名、电量、SIM 等信息；网络告警地址是占位符，导入后再替换
+    //The repo is public: no IPs, device name, battery or SIM data from the source phone; the alert URL is a placeholder rebased after import
     @Test
     fun asset_settingsAreSanitized() {
         val info = DefaultConfig.parse(template)
@@ -68,7 +68,7 @@ class DefaultConfigTest {
         assertEquals(true, map["net_alert_enabled"])
     }
 
-    //通话按每日汇总转发；具体时间不写在配置里，导入时取首次设置的时刻，让各设备错开、减轻服务端压力
+    //Calls use daily batch forwarding; the time is not in the config but taken at first setup, spreading devices out
     @Test
     fun asset_callsForwardedDailyAtFirstRunTime() {
         val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
@@ -78,7 +78,7 @@ class DefaultConfigTest {
         assertFalse(map.containsKey("daily_forward_time"))
     }
 
-    //通话备注：开启，地址为 {{BASE_URL}}/webhook/call-note，每天 14:00 批量发送
+    //Call notes: on, sent to {{BASE_URL}}/webhook/call-note in a daily batch at 14:00
     @Test
     fun asset_callNoteEnabledDailyAt1400() {
         val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
@@ -89,14 +89,14 @@ class DefaultConfigTest {
         assertEquals(DailyTime.slotOf(14, 0), map["call_note_batch_time"])
     }
 
-    //应用锁默认开启，密码 1331（只存哈希）
+    //App lock on by default with PIN 1331 (only the hash is stored)
     @Test
     fun asset_appLockIs1331() {
         val map = SharedPreference.deSerialization<Map<String, Any>>(DefaultConfig.parse(template).settings)
         assertEquals(AppLockUtils.sha256("1331"), map["app_lock_hash"])
     }
 
-    //默认配置里不能出现 n8n 字样和原手机的设备名
+    //The default config must not mention n8n or the source phone's device name
     @Test
     fun asset_hasNoServerOrOwnerNames() {
         assertFalse(template.contains("n8n", ignoreCase = true))
@@ -111,7 +111,7 @@ class DefaultConfigTest {
     @Test
     fun asset_hasNoLeftoverPlaceholderAfterApply() {
         val applied = DefaultConfig.applyBaseUrl(template, "https://example.org")
-        //settings 里的占位符是 URL 编码后的，不受文本替换影响，由 restore 后单独处理
+        //The placeholder inside settings is URL-encoded, so text replacement skips it; it is rebased after restore
         assertTrue(applied.contains("%7B%7BBASE_URL%7D%7D"))
         assertFalse(applied.contains("{{BASE_URL}}"))
     }

@@ -14,14 +14,15 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * 内置默认配置：assets/default_config.json（「一键换新机」导出的 CloneInfo 结构），
- * 其中所有地址的域名部分写成 [PLACEHOLDER]，首次打开时由用户填写 baseurl 与设备名称后导入。
+ * Bundled default config: assets/default_config.json (the CloneInfo format exported by "clone").
+ * Every URL host is written as [PLACEHOLDER]; on first launch the user enters the base URL and device name.
  *
- * settings 是序列化后的 SharedPreferences，里面的网络告警/通话备注地址是 URL 编码的，文本替换够不到，
- * 所以还原之后再对 [SettingUtils.netAlertUrl]、[SettingUtils.callNoteUrl] 单独替换一次。
- * 每日汇总转发的时间点不写在配置里，取首次设置的时刻，让各设备错开、减轻服务端压力。
+ * `settings` is serialized SharedPreferences whose alert/call-note URLs are URL-encoded, so plain text
+ * replacement cannot reach them: [SettingUtils.netAlertUrl] and [SettingUtils.callNoteUrl] are rebased after restore.
+ * The daily forwarding time is not in the config: it is the moment of first setup, so devices are
+ * spread out and the server is not hit by all of them at once.
  *
- * 「是否已完成」存放在独立的 SharedPreferences 文件里，不随配置导入被清空；只有导入成功才标记。
+ * The "done" flag lives in a separate SharedPreferences file so an import cannot clear it; set only on success.
  */
 object DefaultConfig {
 
@@ -33,7 +34,7 @@ object DefaultConfig {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    //补全协议、去掉末尾的 /；空白、引号、反斜杠等会破坏 JSON 或不是合法地址的输入返回 null
+    //Adds a scheme and strips trailing slashes; returns null for input that is not a valid URL or would break the JSON
     fun normalizeBaseUrl(input: String): String? {
         var url = input.trim()
         if (url.isEmpty() || url.any { it.isWhitespace() || it == '"' || it == '\\' }) return null
@@ -51,7 +52,7 @@ object DefaultConfig {
 
     fun parse(json: String): CloneInfo {
         val gson = GsonBuilder()
-            //Date 字段统一替换为当前时间（与 CloneFragment 导入一致）
+            //Replace every Date field with now (same as the CloneFragment import)
             .registerTypeAdapter(Date::class.java, JsonDeserializer<Any?> { _, _, _ -> Date() })
             .create()
         return gson.fromJson(json, CloneInfo::class.java)
@@ -65,8 +66,8 @@ object DefaultConfig {
     }
 
     /**
-     * 导入内置配置并写入设备名称。在子线程执行，onResult(success, errorMessage) 在主线程回调。
-     * 内置配置随 App 一起发布，不做 compareVersion 校验。
+     * Imports the bundled config and sets the device name. Runs on a worker thread; onResult(success, errorMessage)
+     * is called on the main thread. The config ships with the app, so compareVersion is skipped.
      */
     fun apply(context: Context, baseUrl: String, deviceName: String, onResult: (Boolean, String?) -> Unit) {
         val appContext = context.applicationContext
@@ -75,7 +76,7 @@ object DefaultConfig {
             try {
                 val template = appContext.assets.open(ASSET).bufferedReader().use { it.readText() }
                 HttpServerUtils.restoreSettings(parse(applyBaseUrl(template, baseUrl)))
-                //restoreSettings 会保留旧的设备名称，这里再覆盖成用户填写的
+                //restoreSettings keeps the old device name; overwrite it with the one the user entered
                 SettingUtils.extraDeviceMark = deviceName
                 SettingUtils.netAlertUrl = applyBaseUrl(SettingUtils.netAlertUrl, baseUrl)
                 SettingUtils.callNoteUrl = applyBaseUrl(SettingUtils.callNoteUrl, baseUrl)
@@ -84,11 +85,11 @@ object DefaultConfig {
                 NetAlertWorker.schedule(appContext)
                 CallNoteWorker.schedule(appContext)
                 DailyForwardWorker.schedule(appContext)
-                //随后会重启进程：用 commit 把上面 apply 的设置同步落盘，避免进程退出时丢失
+                //The process restarts next: commit() flushes the apply()-ed settings to disk so they are not lost on exit
                 SharedPreference.preference.edit().commit()
                 markApplied(appContext)
             } catch (e: Exception) {
-                Log.e(TAG, "导入内置配置失败：${e.message}", e)
+                Log.e(TAG, "Importing the bundled config failed: ${e.message}", e)
                 err = e.message ?: e.javaClass.simpleName
             }
             val fErr = err

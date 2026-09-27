@@ -124,7 +124,7 @@ const val SP_CALL_NOTE_DISPLAY_MODE = "call_note_display_mode"
 //发送方式：0=写完立即发送，1=按周期批量发送
 const val SP_CALL_NOTE_SEND_MODE = "call_note_send_mode"
 const val SP_CALL_NOTE_BATCH_INTERVAL = "call_note_batch_interval_minutes"
-//通话备注「每天定时」批量发送的时间点（DailyTime 下标，10 分钟一档）
+//Time of day for the daily call-note batch (DailyTime slot, 10-minute steps)
 const val SP_CALL_NOTE_BATCH_TIME = "call_note_batch_time"
 const val CALL_NOTE_DISPLAY_POPUP = 0
 const val CALL_NOTE_DISPLAY_NOTIFICATION = 1

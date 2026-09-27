@@ -21,7 +21,7 @@ class CustomUpdateParser : AbstractUpdateParser() {
             .setDownloadUrl(info.downloadUrl)
             //XUpdate 的 size 单位是 KB
             .setSize(info.sizeBytes / 1024)
-            //始终保持最新版：不允许「忽略此版本」，否则之后打开 App 也不会再更新
+            //Always stay on the latest version: no "ignore this version", or later opens would never update
             .setIsIgnorable(false)
     }
 }

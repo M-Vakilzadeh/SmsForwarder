@@ -134,8 +134,9 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
          * - 每天定时(间隔>=1440)：以「距下一个设定时间点」为初始延迟，安排 24 小时周期任务；
          * - 每 N 分钟：安排 N 分钟周期任务（下限 15 分钟）。
          *
-         * reanchor=false（App 启动时用）：已有任务就保留（KEEP）。每天定时的任务若因断网/Doze 过了时间点还没跑，
-         * 重排会把它推到明天、丢掉当天那一轮；设置变更、配置导入用默认 true，立即按新设置重新锚定。
+         * reanchor=false (used at app start): keep an existing job (KEEP). If a daily job missed its slot because of
+         * no network or Doze, re-enqueueing would push it to tomorrow and skip that day. Settings changes and
+         * config imports use the default true to re-anchor to the new settings immediately.
          */
         fun schedule(context: Context, reanchor: Boolean = true) {
             val wm = WorkManager.getInstance(context)

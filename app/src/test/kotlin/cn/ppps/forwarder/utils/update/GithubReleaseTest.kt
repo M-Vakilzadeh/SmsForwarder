@@ -27,7 +27,7 @@ class GithubReleaseTest {
         assertEquals(19529195L, info.sizeBytes)
     }
 
-    //装的是分 ABI 包（versionCode 首位=ABI）时必须下同一 ABI 的包：universal 的 1xxxxx 比 3xxxxx 小，会被系统判为降级而装不上
+    //A per-ABI install (first versionCode digit = ABI) must get the same ABI: universal 1xxxxx < 3xxxxx is rejected as a downgrade
     @Test
     fun parse_picksApkMatchingInstalledAbi() {
         val info = GithubRelease.parseLatest(release(), installedVersionCode = 300055)!!

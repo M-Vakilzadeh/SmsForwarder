@@ -438,7 +438,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
             }
 
             R.id.btn_call_note_batch_interval -> {
-                //与转发周期同一组选项：15/30 分钟 … 12 小时、每天定时
+                //Same options as the forwarding interval: 15/30 min … 12 h, or daily at a set time
                 val labels = batchIntervalOptions.map { batchIntervalLabel(it) }
                 val currentIdx = batchIntervalOptions.indexOf(SettingUtils.callNoteBatchInterval).let { if (it < 0) 2 else it }
                 OptionsPickerBuilder(context, OnOptionsSelectListener { _: View?, options1: Int, _: Int, _: Int ->
@@ -657,7 +657,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding?>(), View.OnClickL
         }
     }
 
-    //通话备注：开关 + 地址 + 展示方式（弹窗/通知）+ 悬浮窗权限 + 发送方式（立即/批量）+ 批量周期（可每天定时）
+    //Call notes: switch + URL + display (popup/notification) + overlay permission + send mode (instant/batch) + batch interval (or daily at a set time)
     private fun setupCallNote() {
         refreshCallNoteViews()
         val enabled = SettingUtils.callNoteEnabled

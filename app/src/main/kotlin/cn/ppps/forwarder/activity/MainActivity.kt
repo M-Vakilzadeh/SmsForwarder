@@ -78,7 +78,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     private val TAG: String = MainActivity::class.java.simpleName
 
     companion object {
-        //打开 App 自动检查更新的最小间隔（进程内有效）：避免反复切回前台时重复下载
+        //Minimum gap between on-open update checks (per process), so switching back to the app does not re-download
         private const val AUTO_UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000L
         private var lastAutoUpdateCheck = 0L
     }
@@ -107,10 +107,11 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     }
 
     /**
-     * 通话转发/通话备注可能是通过「配置导入」（含首次打开的内置配置）开启的，没有经过设置页开关，
-     * 这里补一次权限申请：监听通话状态/通话记录/联系人（转发还要读手机号）；
-     * 通话备注弹窗模式还需要悬浮窗权限，否则会一直退化为通知。
-     * 没有这些权限时通话会被静默丢弃，所以每次打开都检查。
+     * Call forwarding / call notes may have been turned on by a config import (including the bundled
+     * first-run config) rather than the Settings switches, so request their permissions here:
+     * phone state, call log and contacts (forwarding also needs phone numbers); the call-note popup
+     * also needs the overlay permission, otherwise it always falls back to a notification.
+     * Without these permissions calls are silently dropped, so this is checked on every open.
      */
     private fun requestCallPermissionsIfNeeded() {
         if (!SettingUtils.enablePhone && !SettingUtils.callNoteEnabled) return
@@ -162,7 +163,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             .permission(PermissionLists.getPostNotificationsPermission())
             .request(object : OnPermissionCallback {
                 override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
-                    //通知权限弹窗结束后再申请通话转发/通话备注所需权限（XXPermissions 不支持并发申请）
+                    //Ask for call forwarding / call note permissions after the notification prompt (XXPermissions cannot run two requests at once)
                     requestCallPermissionsIfNeeded()
                     val allGranted = deniedList.isEmpty()
                     if (!allGranted) {
@@ -189,14 +190,14 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             }
         }
 
-        //新机首次打开：填写 baseurl 与设备名称，导入内置默认配置
+        //First launch on a new device: ask for the base URL and device name, then import the bundled default config
         maybeShowDefaultConfigSetup()
     }
 
     override fun onStart() {
         super.onStart()
-        //每次打开 App 都检查是否是最新版本；有新版本自动下载并调起安装。
-        //App 常驻且不在最近任务中显示，onCreate 很少重跑，所以放在 onStart；短时间内重复进入不重复检查
+        //Check for the latest version every time the app is opened; a newer one is downloaded and the installer opened.
+        //The app stays resident and hidden from recents, so onCreate rarely re-runs: use onStart, throttled.
         val now = System.currentTimeMillis()
         if (SettingUtils.autoCheckUpdate && NetworkUtils.isHaveInternet() && now - lastAutoUpdateCheck > AUTO_UPDATE_CHECK_INTERVAL_MS) {
             lastAutoUpdateCheck = now
@@ -205,8 +206,9 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     }
 
     /**
-     * 新机首次打开：依次询问 baseurl（不预填，由用户输入）和设备名称，然后导入内置默认配置。
-     * 不可取消，导入成功才标记完成，中途退出下次打开会再问；已配置过发送通道的（老设备升级）不打扰。
+     * First launch on a new device: ask for the base URL (not pre-filled, the user types it) and the device name,
+     * then import the bundled default config. Not cancelable; marked done only after a successful import, so
+     * leaving halfway asks again next time. Devices that already have senders (upgrades) are skipped.
      */
     private fun maybeShowDefaultConfigSetup() {
         try {
@@ -265,7 +267,7 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
                     .cancelable(false)
                     .positiveText(R.string.confirm)
                     .onPositive { _: MaterialDialog?, _: DialogAction? ->
-                        //导入的设置（前台服务、定时任务、通话监听等）大多在进程启动时读取，重启整个 App 才完全生效
+                        //Most imported settings (foreground service, scheduled jobs, call listeners) are read at process start, so restart the app
                         restartApplication()
                     }
                     .show()

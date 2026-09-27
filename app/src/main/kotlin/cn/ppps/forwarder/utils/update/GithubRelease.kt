@@ -17,10 +17,10 @@ object GithubRelease {
     const val RELEASES_PAGE = "https://github.com/M-Vakilzadeh/SmsForwarder/releases"
 
     /**
-     * 草稿/预发布/没有 apk 附件/解析失败都返回 null。
-     * 多个 apk 时优先与已安装包同一 ABI 的（versionCode 首位 = ABI，见 build.gradle 的 abiCodes）：
-     * 分 ABI 包的 versionCode 是 2xxxxx~5xxxxx，装 universal(1xxxxx) 会被系统判为降级而失败；
-     * 找不到同 ABI 的包（或 installedVersionCode 未知）再用 universal（适用所有 ABI）。
+     * Returns null for drafts, pre-releases, releases without an APK, or unparsable JSON.
+     * With several APKs, prefers the one for the installed ABI (first digit of versionCode, see abiCodes in build.gradle):
+     * per-ABI builds are 2xxxxx-5xxxxx, so installing universal (1xxxxx) over them is rejected as a downgrade.
+     * Falls back to universal (all ABIs) when there is no match or installedVersionCode is unknown.
      */
     fun parseLatest(json: String, installedVersionCode: Int = 0): ReleaseInfo? {
         return try {
@@ -47,7 +47,7 @@ object GithubRelease {
         }
     }
 
-    //文件名形如 SmsF_3.5.0.260921_300055_arm64-v8a_release.apk，取其中 versionCode 的首位；不符合格式返回 null
+    //File names look like SmsF_3.5.0.260921_300055_arm64-v8a_release.apk; returns the first digit of the versionCode, or null
     fun abiPrefix(fileName: String): Int? {
         val code = fileName.split("_").getOrNull(2)?.toIntOrNull() ?: return null
         return (code / 100_000).takeIf { it > 0 }

@@ -65,8 +65,8 @@ class XUpdateInit private constructor() {
         }
 
         /**
-         * 打开 App 时的更新检查：自动模式，有新版本直接后台下载，下载完调起系统安装界面
-         * （非 root 无法静默安装，只能由用户点「安装」）。
+         * Update check when the app is opened: auto mode downloads a newer version in the background, then opens
+         * the system installer (a non-root app cannot install silently; the user taps "Install").
          */
         fun checkUpdateAuto(context: Context) {
             XUpdate.newBuild(context).updateUrl(KEY_UPDATE_URL).isAutoMode(true).update()

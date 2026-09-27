@@ -3,14 +3,14 @@ package cn.ppps.forwarder.utils
 import java.util.Calendar
 
 /**
- * 「每天定时」用的时间下标：一天按 10 分钟一档切成 144 档（与 DataProvider.timePeriodOption 一致）。
- * 每日汇总转发、通话备注每日批量发送都用它表示时间点。
+ * Time-of-day slot for "daily at a set time": the day is cut into 144 ten-minute slots
+ * (same as DataProvider.timePeriodOption). Used by daily batch forwarding and the daily call-note batch.
  */
 object DailyTime {
 
     fun slotOf(hour: Int, minute: Int): Int = (hour * 60 + minute) / 10
 
-    //距离下一个该时间点的毫秒数；已过或正好是现在，则算到明天
+    //Milliseconds until the next occurrence of the slot; if it has passed or is now, the next one is tomorrow
     fun delayUntilSlot(slot: Int, now: Calendar = Calendar.getInstance()): Long {
         val totalMinutes = slot * 10
         val target = (now.clone() as Calendar).apply {

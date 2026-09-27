@@ -310,7 +310,7 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             //启动即补投一次：App 曾被强杀多日后再次打开时（网络本就在，不会触发联网事件），立即把积压日志补出去
             SweepWorker.enqueueOnce(this)
             //每日汇总转发：按当前设置安排/取消定时任务（非每日模式会自动取消）
-            //reanchor=false：进程重启不打乱已排好的每日任务（过点未跑的那一轮照样补跑）
+            //reanchor=false: a process restart must not re-anchor the daily jobs (a run that missed its slot still runs)
             DailyForwardWorker.schedule(this, reanchor = false)
             //通话记录对账（通道 C）：每 6 小时直接读通话记录批量补账，不依赖广播接收器
             ReconcileWorker.enqueuePeriodic(this)

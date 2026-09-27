@@ -3,13 +3,9 @@ package cn.ppps.forwarder.activity
 import android.annotation.SuppressLint
 import android.view.KeyEvent
 import cn.ppps.forwarder.R
-import cn.ppps.forwarder.utils.CommonUtils.Companion.showPrivacyDialog
 import cn.ppps.forwarder.utils.SettingUtils
-import cn.ppps.forwarder.utils.SettingUtils.Companion.isAgreePrivacy
 import com.xuexiang.xui.utils.KeyboardUtils
 import com.xuexiang.xui.widget.activity.BaseSplashActivity
-import com.xuexiang.xui.widget.dialog.materialdialog.DialogAction
-import com.xuexiang.xui.widget.dialog.materialdialog.MaterialDialog
 import com.xuexiang.xutil.app.ActivityUtils
 import me.jessyan.autosize.internal.CancelAdapt
 
@@ -32,18 +28,12 @@ class SplashActivity : BaseSplashActivity(), CancelAdapt {
     }
 
     /**
-     * 启动页结束后的动作
+     * Called when the splash screen ends
      */
     override fun onSplashFinished() {
-        if (isAgreePrivacy) {
-            whereToJump()
-        } else {
-            showPrivacyDialog(this) { dialog: MaterialDialog, _: DialogAction? ->
-                dialog.dismiss()
-                isAgreePrivacy = true
-                whereToJump()
-            }
-        }
+        //Skip upstream SmsForwarder's privacy-policy popup: go straight to the app.
+        //isAgreePrivacy is left untouched (it only gates UMeng analytics).
+        whereToJump()
     }
 
     private fun whereToJump() {

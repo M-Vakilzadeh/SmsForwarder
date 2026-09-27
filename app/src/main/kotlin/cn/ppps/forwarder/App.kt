@@ -310,7 +310,8 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             //启动即补投一次：App 曾被强杀多日后再次打开时（网络本就在，不会触发联网事件），立即把积压日志补出去
             SweepWorker.enqueueOnce(this)
             //每日汇总转发：按当前设置安排/取消定时任务（非每日模式会自动取消）
-            DailyForwardWorker.schedule(this)
+            //reanchor=false：进程重启不打乱已排好的每日任务（过点未跑的那一轮照样补跑）
+            DailyForwardWorker.schedule(this, reanchor = false)
             //通话记录对账（通道 C）：每 6 小时直接读通话记录批量补账，不依赖广播接收器
             ReconcileWorker.enqueuePeriodic(this)
             //心跳（通道 D）：每 30 分钟上报设备状态，把静默失败变成当天可发现
@@ -318,7 +319,7 @@ class App : Application(), CactusCallback, Configuration.Provider by Core {
             //网络状态告警：按用户设置定时检查网络并调用其 webhook（未开启会自动取消）
             NetAlertWorker.schedule(this)
             //通话备注：批量模式安排周期发送；立即模式补发积压
-            CallNoteWorker.schedule(this)
+            CallNoteWorker.schedule(this, reanchor = false)
             //每天检查一次 GitHub Releases 是否有新版本
             UpdateCheckWorker.enqueuePeriodic(this)
 

@@ -134,9 +134,10 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
          * - 每天定时(间隔>=1440)：以「距下一个设定时间点」为初始延迟，安排 24 小时周期任务；
          * - 每 N 分钟：安排 N 分钟周期任务（下限 15 分钟）。
          *
-         * 用 REPLACE：每次调用都按最新设置重新锚定，设置变更或重启后都能生效。
+         * reanchor=false（App 启动时用）：已有任务就保留（KEEP）。每天定时的任务若因断网/Doze 过了时间点还没跑，
+         * 重排会把它推到明天、丢掉当天那一轮；设置变更、配置导入用默认 true，立即按新设置重新锚定。
          */
-        fun schedule(context: Context) {
+        fun schedule(context: Context, reanchor: Boolean = true) {
             val wm = WorkManager.getInstance(context)
             if (SettingUtils.forwardTiming != FORWARD_TIMING_DAILY) {
                 wm.cancelUniqueWork(UNIQUE)
@@ -155,7 +156,8 @@ class DailyForwardWorker(context: Context, params: WorkerParameters) : Coroutine
                 PeriodicWorkRequestBuilder<DailyForwardWorker>(period, TimeUnit.MINUTES).build()
             }
             //CANCEL_AND_REENQUEUE（即旧 REPLACE 的非废弃写法）：变更间隔/时间后立即按新排程重来
-            wm.enqueueUniquePeriodicWork(UNIQUE, ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, request)
+            val policy = if (reanchor) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP
+            wm.enqueueUniquePeriodicWork(UNIQUE, policy, request)
             Log.d(TAG, "已安排定时汇总任务，interval=${interval}min")
         }
 

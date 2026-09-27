@@ -45,7 +45,7 @@ import cn.ppps.forwarder.utils.EVENT_LOAD_APP_LIST
 import cn.ppps.forwarder.utils.FRPC_LIB_DOWNLOAD_URL
 import cn.ppps.forwarder.utils.FRPC_LIB_VERSION
 import cn.ppps.forwarder.utils.Log
-import cn.ppps.forwarder.utils.ProvisionUtils
+import cn.ppps.forwarder.utils.DefaultConfig
 import cn.ppps.forwarder.utils.CALL_NOTE_DISPLAY_POPUP
 import cn.ppps.forwarder.utils.SettingUtils
 import cn.ppps.forwarder.utils.XToastUtils
@@ -76,6 +76,12 @@ import java.io.File
 class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemSelectedListener {
 
     private val TAG: String = MainActivity::class.java.simpleName
+
+    companion object {
+        //打开 App 自动检查更新的最小间隔（进程内有效）：避免反复切回前台时重复下载
+        private const val AUTO_UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000L
+        private var lastAutoUpdateCheck = 0L
+    }
     private val POS_LOG = 0
     private val POS_RULE = 1
     private val POS_SENDER = 2
@@ -101,17 +107,22 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
     }
 
     /**
-     * 通话备注可能是通过「配置导入」开启的（没有经过设置页开关），这里补一次权限申请：
-     * 监听通话状态/通话记录/联系人；弹窗模式还需要悬浮窗权限，否则会一直退化为通知。
+     * 通话转发/通话备注可能是通过「配置导入」（含首次打开的内置配置）开启的，没有经过设置页开关，
+     * 这里补一次权限申请：监听通话状态/通话记录/联系人（转发还要读手机号）；
+     * 通话备注弹窗模式还需要悬浮窗权限，否则会一直退化为通知。
+     * 没有这些权限时通话会被静默丢弃，所以每次打开都检查。
      */
-    private fun requestCallNotePermissionsIfNeeded() {
-        if (!SettingUtils.callNoteEnabled) return
+    private fun requestCallPermissionsIfNeeded() {
+        if (!SettingUtils.enablePhone && !SettingUtils.callNoteEnabled) return
         val permissions = mutableListOf(
             PermissionLists.getReadPhoneStatePermission(),
             PermissionLists.getReadCallLogPermission(),
             PermissionLists.getReadContactsPermission(),
         )
-        if (SettingUtils.callNoteDisplayMode == CALL_NOTE_DISPLAY_POPUP) {
+        if (SettingUtils.enablePhone) {
+            permissions.add(PermissionLists.getReadPhoneNumbersPermission())
+        }
+        if (SettingUtils.callNoteEnabled && SettingUtils.callNoteDisplayMode == CALL_NOTE_DISPLAY_POPUP) {
             permissions.add(PermissionLists.getSystemAlertWindowPermission())
         }
         if (XXPermissions.isGrantedPermissions(this, permissions)) return
@@ -119,7 +130,10 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             .permissions(permissions)
             .request(object : OnPermissionCallback {
                 override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
-                    if (deniedList.isNotEmpty()) XToastUtils.error(getString(R.string.call_note) + ": " + getString(R.string.toast_denied))
+                    if (deniedList.isNotEmpty()) {
+                        val feature = getString(if (SettingUtils.enablePhone) R.string.forward_calls else R.string.call_note)
+                        XToastUtils.error(feature + ": " + getString(R.string.toast_denied))
+                    }
                 }
             })
     }
@@ -148,8 +162,8 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             .permission(PermissionLists.getPostNotificationsPermission())
             .request(object : OnPermissionCallback {
                 override fun onResult(grantedList: MutableList<IPermission>, deniedList: MutableList<IPermission>) {
-                    //通知权限弹窗结束后再申请通话备注所需权限（XXPermissions 不支持并发申请）
-                    requestCallNotePermissionsIfNeeded()
+                    //通知权限弹窗结束后再申请通话转发/通话备注所需权限（XXPermissions 不支持并发申请）
+                    requestCallPermissionsIfNeeded()
                     val allGranted = deniedList.isEmpty()
                     if (!allGranted) {
                         XToastUtils.error(R.string.tips_notification)
@@ -175,56 +189,89 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
             }
         }
 
-        //新机首次打开：提示从指定地址下载并导入配置（批量装机加速）
-        maybeShowProvisionImport()
+        //新机首次打开：填写 baseurl 与设备名称，导入内置默认配置
+        maybeShowDefaultConfigSetup()
     }
 
-    //新机首次打开时弹窗：从 URL 下载配置 JSON 并一键导入。仅在未提示过且尚未配置任何发送通道时出现。
-    private fun maybeShowProvisionImport() {
-        try {
-            if (ProvisionUtils.hasPrompted(this)) return
-            //已配置发送通道说明不是新机，直接标记为已提示，避免打扰
-            if (Core.sender.getAllNonCache().isNotEmpty()) {
-                ProvisionUtils.markPrompted(this)
-                return
-            }
-            ProvisionUtils.markPrompted(this)
-            MaterialDialog.Builder(this)
-                .title(R.string.provision_import_title)
-                .content(R.string.provision_import_content)
-                .inputType(InputType.TYPE_TEXT_VARIATION_URI)
-                .input(getString(R.string.provision_import_url_hint), SettingUtils.configImportUrl, false) { _: MaterialDialog?, input: CharSequence? ->
-                    val url = input?.toString()?.trim() ?: ""
-                    if (url.isNotEmpty()) doDownloadImport(url)
-                }
-                .positiveText(R.string.provision_import_download)
-                .negativeText(R.string.skip)
-                .cancelable(true)
-                .show()
-        } catch (e: Exception) {
-            Log.e(TAG, "maybeShowProvisionImport: ${e.message}")
+    override fun onStart() {
+        super.onStart()
+        //每次打开 App 都检查是否是最新版本；有新版本自动下载并调起安装。
+        //App 常驻且不在最近任务中显示，onCreate 很少重跑，所以放在 onStart；短时间内重复进入不重复检查
+        val now = System.currentTimeMillis()
+        if (SettingUtils.autoCheckUpdate && NetworkUtils.isHaveInternet() && now - lastAutoUpdateCheck > AUTO_UPDATE_CHECK_INTERVAL_MS) {
+            lastAutoUpdateCheck = now
+            XUpdateInit.checkUpdateAuto(this)
         }
     }
 
-    private fun doDownloadImport(url: String) {
-        //记住地址，供设置页「在线导入配置/更新」复用
-        SettingUtils.configImportUrl = url
-        XToastUtils.toast(getString(R.string.provision_downloading))
-        ProvisionUtils.downloadAndImport(url) { ok: Boolean, msg: String? ->
+    /**
+     * 新机首次打开：依次询问 baseurl（默认 [DefaultConfig.DEFAULT_BASE_URL]）和设备名称，然后导入内置默认配置。
+     * 不可取消，导入成功才标记完成，中途退出下次打开会再问；已配置过发送通道的（老设备升级）不打扰。
+     */
+    private fun maybeShowDefaultConfigSetup() {
+        try {
+            if (DefaultConfig.isApplied(this)) return
+            if (Core.sender.getAllNonCache().isNotEmpty()) {
+                DefaultConfig.markApplied(this)
+                return
+            }
+            askBaseUrl(DefaultConfig.DEFAULT_BASE_URL)
+        } catch (e: Exception) {
+            Log.e(TAG, "maybeShowDefaultConfigSetup: ${e.message}")
+        }
+    }
+
+    private fun askBaseUrl(prefill: String) {
+        MaterialDialog.Builder(this)
+            .title(R.string.default_config_title)
+            .content(R.string.default_config_base_url_content)
+            .inputType(InputType.TYPE_TEXT_VARIATION_URI)
+            .input(getString(R.string.default_config_base_url_hint), prefill, false) { _: MaterialDialog?, input: CharSequence? ->
+                val raw = input?.toString() ?: ""
+                val baseUrl = DefaultConfig.normalizeBaseUrl(raw)
+                if (baseUrl == null) {
+                    XToastUtils.error(R.string.default_config_invalid_url)
+                    askBaseUrl(raw)
+                } else {
+                    askDeviceName(baseUrl)
+                }
+            }
+            .positiveText(R.string.default_config_next)
+            .cancelable(false)
+            .show()
+    }
+
+    private fun askDeviceName(baseUrl: String) {
+        MaterialDialog.Builder(this)
+            .title(R.string.default_config_title)
+            .content(R.string.default_config_device_name_content)
+            .inputType(InputType.TYPE_CLASS_TEXT)
+            .input(getString(R.string.default_config_device_name_hint), SettingUtils.extraDeviceMark, false) { _: MaterialDialog?, input: CharSequence? ->
+                val name = input?.toString()?.trim() ?: ""
+                if (name.isEmpty()) askDeviceName(baseUrl) else applyDefaultConfig(baseUrl, name)
+            }
+            .positiveText(R.string.confirm)
+            .cancelable(false)
+            .show()
+    }
+
+    private fun applyDefaultConfig(baseUrl: String, deviceName: String) {
+        XToastUtils.toast(getString(R.string.default_config_applying))
+        DefaultConfig.apply(this, baseUrl, deviceName) { ok: Boolean, msg: String? ->
             if (ok) {
                 MaterialDialog.Builder(this)
-                    .title(R.string.clone)
-                    .content(R.string.import_succeeded)
+                    .title(R.string.default_config_title)
+                    .content(R.string.default_config_done)
                     .cancelable(false)
                     .positiveText(R.string.confirm)
                     .onPositive { _: MaterialDialog?, _: DialogAction? ->
-                        val intent = Intent(App.context, MainActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        startActivity(intent)
+                        //导入的设置（前台服务、定时任务、通话监听等）大多在进程启动时读取，重启整个 App 才完全生效
+                        restartApplication()
                     }
                     .show()
             } else {
-                XToastUtils.error(getString(R.string.online_import_failed) + (msg ?: ""))
+                XToastUtils.error(getString(R.string.default_config_failed) + (msg ?: ""))
+                askBaseUrl(baseUrl)
             }
         }
     }
@@ -269,7 +316,6 @@ class MainActivity : BaseActivity<ActivityMainBinding?>(), DrawerAdapter.OnItemS
         //仅当开启自动检查且有网络时自动检查更新/获取提示
         if (SettingUtils.autoCheckUpdate && NetworkUtils.isHaveInternet()) {
             showTips(this)
-            XUpdateInit.checkUpdate(this, false, SettingUtils.joinPreviewProgram)
         }
     }
 

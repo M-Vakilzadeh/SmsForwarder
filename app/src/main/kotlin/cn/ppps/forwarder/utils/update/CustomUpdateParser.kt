@@ -11,7 +11,7 @@ import com.xuexiang.xupdate.proxy.impl.AbstractUpdateParser
 class CustomUpdateParser : AbstractUpdateParser() {
     @Throws(Exception::class)
     override fun parseJson(json: String): UpdateEntity {
-        val info = GithubRelease.parseLatest(json)
+        val info = GithubRelease.parseLatest(json, AppUtils.getAppVersionCode())
             ?: return UpdateEntity().setHasUpdate(false)
 
         return UpdateEntity()
@@ -21,6 +21,7 @@ class CustomUpdateParser : AbstractUpdateParser() {
             .setDownloadUrl(info.downloadUrl)
             //XUpdate 的 size 单位是 KB
             .setSize(info.sizeBytes / 1024)
-            .setIsIgnorable(true)
+            //始终保持最新版：不允许「忽略此版本」，否则之后打开 App 也不会再更新
+            .setIsIgnorable(false)
     }
 }

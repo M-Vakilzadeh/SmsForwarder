@@ -16,8 +16,13 @@ object GithubRelease {
     const val LATEST_URL = "https://api.github.com/repos/M-Vakilzadeh/SmsForwarder/releases/latest"
     const val RELEASES_PAGE = "https://github.com/M-Vakilzadeh/SmsForwarder/releases"
 
-    //草稿/预发布/没有 apk 附件/解析失败都返回 null；多个 apk 时优先 universal（适用所有 ABI）
-    fun parseLatest(json: String): ReleaseInfo? {
+    /**
+     * 草稿/预发布/没有 apk 附件/解析失败都返回 null。
+     * 多个 apk 时优先与已安装包同一 ABI 的（versionCode 首位 = ABI，见 build.gradle 的 abiCodes）：
+     * 分 ABI 包的 versionCode 是 2xxxxx~5xxxxx，装 universal(1xxxxx) 会被系统判为降级而失败；
+     * 找不到同 ABI 的包（或 installedVersionCode 未知）再用 universal（适用所有 ABI）。
+     */
+    fun parseLatest(json: String, installedVersionCode: Int = 0): ReleaseInfo? {
         return try {
             val obj = Gson().fromJson(json, JsonObject::class.java) ?: return null
             val tag = obj.get("tag_name")?.takeIf { it.isJsonPrimitive }?.asString ?: return null
@@ -26,7 +31,9 @@ object GithubRelease {
             val apks = obj.getAsJsonArray("assets")?.mapNotNull { it.asJsonObject }
                 ?.filter { it.get("name")?.asString?.endsWith(".apk", ignoreCase = true) == true }
                 .orEmpty()
-            val asset = apks.firstOrNull { it.get("name").asString.contains("universal", ignoreCase = true) }
+            val installedAbi = installedVersionCode / 100_000
+            val asset = apks.firstOrNull { installedAbi > 0 && abiPrefix(it.get("name").asString) == installedAbi }
+                ?: apks.firstOrNull { it.get("name").asString.contains("universal", ignoreCase = true) }
                 ?: apks.firstOrNull() ?: return null
 
             ReleaseInfo(
@@ -38,6 +45,12 @@ object GithubRelease {
         } catch (e: Exception) {
             null
         }
+    }
+
+    //文件名形如 SmsF_3.5.0.260921_300055_arm64-v8a_release.apk，取其中 versionCode 的首位；不符合格式返回 null
+    fun abiPrefix(fileName: String): Int? {
+        val code = fileName.split("_").getOrNull(2)?.toIntOrNull() ?: return null
+        return (code / 100_000).takeIf { it > 0 }
     }
 
     //按 "." 分段做数字比较；tag 允许带前缀 v。无法解析的 tag 一律不算更新，避免误提示

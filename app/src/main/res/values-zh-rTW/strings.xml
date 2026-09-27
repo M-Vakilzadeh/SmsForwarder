@@ -1311,4 +1311,14 @@
     <string name="call_note_channel_name">通話備註</string>
     <string name="call_note_incoming">來電</string>
     <string name="call_note_outgoing">去電</string>
+    <string name="default_config_title">初始設定</string>
+    <string name="default_config_base_url_content">請輸入伺服器基礎位址（baseurl），所有 Webhook 位址都據此產生。</string>
+    <string name="default_config_base_url_hint">基礎位址，例如 https://n8n.kzmn.ir</string>
+    <string name="default_config_device_name_content">請輸入本機的裝置名稱（每筆記錄都會帶上）。</string>
+    <string name="default_config_device_name_hint">裝置名稱</string>
+    <string name="default_config_invalid_url">位址無效，請重新輸入</string>
+    <string name="default_config_applying">正在套用設定…</string>
+    <string name="default_config_failed">初始設定失敗：</string>
+    <string name="default_config_next">下一步</string>
+    <string name="default_config_done">設定已完成，需要重新啟動 App 以便生效。</string>
 </resources>

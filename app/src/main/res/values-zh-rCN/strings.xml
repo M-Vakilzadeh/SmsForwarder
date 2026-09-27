@@ -1310,4 +1310,14 @@
     <string name="call_note_channel_name">通话备注</string>
     <string name="call_note_incoming">来电</string>
     <string name="call_note_outgoing">去电</string>
+    <string name="default_config_title">初始设置</string>
+    <string name="default_config_base_url_content">请输入服务器基础地址（baseurl），所有 Webhook 地址都据此生成。</string>
+    <string name="default_config_base_url_hint">基础地址，例如 https://n8n.kzmn.ir</string>
+    <string name="default_config_device_name_content">请输入本机的设备名称（每条记录都会带上）。</string>
+    <string name="default_config_device_name_hint">设备名称</string>
+    <string name="default_config_invalid_url">地址无效，请重新输入</string>
+    <string name="default_config_applying">正在应用配置…</string>
+    <string name="default_config_failed">初始设置失败：</string>
+    <string name="default_config_next">下一步</string>
+    <string name="default_config_done">配置已完成，需要重启 App 以便生效。</string>
 </resources>

@@ -1313,4 +1313,14 @@
     <string name="call_note_channel_name">Call notes</string>
     <string name="call_note_incoming">Incoming</string>
     <string name="call_note_outgoing">Outgoing</string>
+    <string name="default_config_title">Initial setup</string>
+    <string name="default_config_base_url_content">Enter the server base URL. All webhook addresses are built from it.</string>
+    <string name="default_config_base_url_hint">Base URL, e.g. https://n8n.kzmn.ir</string>
+    <string name="default_config_device_name_content">Enter this device\'s name (sent with every record).</string>
+    <string name="default_config_device_name_hint">Device name</string>
+    <string name="default_config_invalid_url">Invalid URL, please try again</string>
+    <string name="default_config_applying">Applying config…</string>
+    <string name="default_config_failed">Initial setup failed: </string>
+    <string name="default_config_next">Next</string>
+    <string name="default_config_done">Setup complete. The app needs to restart to apply it.</string>
 </resources>

@@ -75,7 +75,7 @@ class SharedPreference<T>(private val name: String, private val default: T) : Re
          * @throws ClassNotFoundException
          */
         @Throws(IOException::class, ClassNotFoundException::class)
-        private fun <T> deSerialization(str: String): T {
+        internal fun <T> deSerialization(str: String): T {
             val redStr = java.net.URLDecoder.decode(str, "UTF-8")
             val byteArrayInputStream = ByteArrayInputStream(
                 redStr.toByteArray(charset("ISO-8859-1"))

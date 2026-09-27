@@ -25,4 +25,14 @@
     <string name="call_note_channel_name">توضیحات تماس</string>
     <string name="call_note_incoming">تماس ورودی</string>
     <string name="call_note_outgoing">تماس خروجی</string>
+    <string name="default_config_title">تنظیمات اولیه</string>
+    <string name="default_config_base_url_content">آدرس پایه سرور (baseurl) را وارد کنید. همه آدرس‌های Webhook از روی آن ساخته می‌شوند.</string>
+    <string name="default_config_base_url_hint">آدرس پایه، مثلاً https://n8n.kzmn.ir</string>
+    <string name="default_config_device_name_content">نام این دستگاه را وارد کنید (همراه هر رکورد ارسال می‌شود).</string>
+    <string name="default_config_device_name_hint">نام دستگاه</string>
+    <string name="default_config_invalid_url">آدرس نامعتبر است، دوباره وارد کنید</string>
+    <string name="default_config_applying">در حال اعمال تنظیمات…</string>
+    <string name="default_config_failed">تنظیمات اولیه ناموفق بود: </string>
+    <string name="default_config_next">بعدی</string>
+    <string name="default_config_done">تنظیمات انجام شد. برای اعمال، برنامه باید دوباره باز شود.</string>
 </resources>
